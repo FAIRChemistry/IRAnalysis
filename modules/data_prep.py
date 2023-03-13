@@ -14,8 +14,7 @@ from typing import List, Optional, Union
 
 
 class IRDataHandler:
-    """
-    Preparation of pyridine absorption IR data for further evaluation.
+    """Preparation of pyridine absorption IR data for further evaluation.
     Extract, correct and save data as '.csv'
     """
 
@@ -43,8 +42,7 @@ class IRDataHandler:
         return "IRDataHandler"
 
     def available_files(self) -> List[str]:
-        """
-        Gives list of available files for processing
+        """Gives list of available files for processing
 
         Returns:
             List[str]: list of files
@@ -52,8 +50,8 @@ class IRDataHandler:
         return {count: value for count, value in enumerate(self.input_files)}
 
     def extract_background_data(self) -> pd.DataFrame:
-        """
-        Finds background data file and extracts data to pd.DataFrame
+        """Finds background data file and extracts data to pd.DataFrame,
+        truncates data to wavenumber range of interest.
 
         Returns:
             pd.DataFrame: background data, 'wavenumber', 'absorbance'
@@ -91,8 +89,8 @@ class IRDataHandler:
         return self.bckgrnd_file
 
     def extract_sample_data(self) -> list[pd.DataFrame]:
-        """
-        extracts csv-files to pd.DataFrame
+        """Extracts sample csv-files to pd.DataFrame, truncates data to
+        wavenumber range of interest.
 
         Returns:
             pd.DataFrame: measurement data,'wavenumber', 'absorbance'
@@ -130,13 +128,11 @@ class IRDataHandler:
     def get_data(
         self, list_of_df: list[pd.DataFrame] = None
     ) -> list[pd.DataFrame]:
-        """
-        Corrects raw data by background correction and truncated data to
-        area of interest
+        """Corrects raw data by background correction.
 
         Args:
             list_of_df (list[pd.DataFrame], optional): list of
-            'sample_files' containing data tobe corrected.
+            'sample_files' containing data to be corrected.
             Defaults to None.
 
         Returns:
@@ -168,8 +164,7 @@ class IRDataHandler:
         return self.sample_data_corr
 
     def get_control_plot(self, index):
-        """
-        Draw plot of raw and corrected data to check for comparison.
+        """Draws plot of raw and corrected data to check for comparison.
 
         Args:
             index (int): file (from 'available_files') which is to be
@@ -197,12 +192,13 @@ class IRDataHandler:
         plt.show()
 
     def get_plot(self, val1: int = 50, val2: int = 53):
-        """
-        Draw plot of all measurement files in one graph.
+        """Draws plot of all measurement files in one graph.
 
         Args:
-            val1 (int, optional): Curve name from file name, first character. Defaults to 50.
-            val2 (int, optional): Curve name from file name, last character. Defaults to 53.
+            val1 (int, optional): Curve name from file name, first
+            character. Defaults to 50.
+            val2 (int, optional): Curve name from file name, last
+            character. Defaults to 53.
         """
         self.get_data()
 
@@ -242,8 +238,7 @@ class IRDataHandler:
         plt.show()
 
     def save_data_to_csv(self):
-        """
-        Turn corrected data for analysis into a pd.DataFrame and export
+        """Turns corrected data for analysis into a pd.DataFrame and exports
         as '.csv'
         """
         self.get_data()

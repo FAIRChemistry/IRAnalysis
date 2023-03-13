@@ -26,8 +26,14 @@ class GaussianFit:
     def __init__(
         self,
         path_to_directory: Optional[Union[str, bytes, os.PathLike]],
-        threshold: float = 0.05,
+        threshold: float = 0.1,
     ) -> None:
+        """Initialization of the class.
+
+        Args:
+            path_to_directory (Optional[Union[str, bytes, os.PathLike]]): path to directory
+            threshold (float, optional): threshold for peak finding. Defaults to 0.1.
+        """
         path = list(Path(path_to_directory).glob("*.csv"))
         self.path = path_to_directory
         self.input_files = {file.stem: file for file in path if file.is_file()}
@@ -50,8 +56,7 @@ class GaussianFit:
         self.residual = None
 
     def available_files(self) -> List[str]:
-        """
-        Gives list of available files for processing
+        """Gives list of available files for processing
 
         Returns:
             List[str]: list of files
@@ -59,6 +64,16 @@ class GaussianFit:
         return {count: value for count, value in enumerate(self.input_files)}
 
     def extract_data(self, index: int) -> pd.DataFrame:
+        """Extracts data from file to pd.DataFrame.
+
+        Args:
+            index (int): index of the file from list of files holding the
+            data to be evaluated
+
+        Returns:
+            pd.DataFrame: extracted measurement data, "wavenumber" and
+            "absorbance"
+        """
 
         df = pd.read_csv(
             self.path / (list(self.input_files)[index] + ".csv"),
@@ -73,7 +88,12 @@ class GaussianFit:
 
         return self.x_array, self.y_array
 
-    def _find_peaks(self) -> None:
+    def _find_peaks(self) -> int:
+        """Finds peaks in data above given threshold.
+
+        Returns:
+            int: number of peaks found
+        """
         correction = ((max(self.x_array) - min(self.x_array)) + 1) / len(
             self.y_array
         )
@@ -100,14 +120,41 @@ class GaussianFit:
 
         return len(peaks)
 
-    def _1gaussian(self, x, amp1, cen1, sigma1):
+    def _1gaussian(self, x, amp1, cen1, sigma1) -> function:
+        """Definition of single Gaussian (for fitting one peak)
+
+        Args:
+            x (array): variable
+            amp1 (float): initial height (amplitude)
+            cen1 (float): initial center
+            sigma1 (float): initial width (sigma)
+
+        Returns:
+            function: single Gaussian
+        """
         return (
             amp1
             * (1 / (sigma1 * (np.sqrt(2 * np.pi))))
             * (np.exp((-1.0 / 2.0) * (((self.x_array - cen1) / sigma1) ** 2)))
         )
 
-    def _2gaussian(self, x, amp1, cen1, sigma1, amp2, cen2, sigma2):
+    def _2gaussian(
+        self, x, amp1, cen1, sigma1, amp2, cen2, sigma2
+    ) -> function:
+        """Definition of doule Gaussian (for fitting two peaks)
+
+        Args:
+            x (_type_): variable
+            amp1 (_type_): initial hight (amplitude) of first Gaussian
+            cen1 (_type_): initial center of first Gaussian
+            sigma1 (_type_): initial width (sigma) of first Gaussian
+            amp2 (_type_): initial hight (amplitude) of second Gaussian
+            cen2 (_type_): initial center of second Gaussian
+            sigma2 (_type_): initial width (sigma) of second Gaussian
+
+        Returns:
+            function: double Gaussian
+        """
         return amp1 * (1 / (sigma1 * (np.sqrt(2 * np.pi)))) * (
             np.exp((-1.0 / 2.0) * (((self.x_array - cen1) / sigma1) ** 2))
         ) + amp2 * (1 / (sigma2 * (np.sqrt(2 * np.pi)))) * (
@@ -116,7 +163,23 @@ class GaussianFit:
 
     def _3gaussian(
         self, x, amp1, cen1, sigma1, amp2, cen2, sigma2, amp3, cen3, sigma3
-    ):
+    ) -> function:
+        """Definition of trple Gaussian (for fitting three peaks)
+
+        Args:
+            x (_type_): variable
+            amp1 (_type_): initial hight (amplitude) of first Gaussian
+            cen1 (_type_): initial center of first Gaussian
+            sigma1 (_type_): initial width (sigma) of first Gaussian
+            amp2 (_type_): initial hight (amplitude) of second Gaussian
+            cen2 (_type_): initial center of second Gaussian
+            sigma2 (_type_): initial width (sigma) of second Gaussian
+            amp3 (_type_): initial height (amplitude) of third Gaussian
+            cen3 (_type_): initial center of third Gaussian
+            sigma3 (_type_): initial widht (sigma) of third Gaussian
+        Returns:
+            function: triple Gaussian
+        """
         return (
             amp1
             * (1 / (sigma1 * (np.sqrt(2 * np.pi))))
@@ -129,16 +192,14 @@ class GaussianFit:
             * (np.exp((-1.0 / 2.0) * (((self.x_array - cen3) / sigma3) ** 2)))
         )
 
-    def _gauss_fit2(self):
+    def _gauss_fit2(self) -> list[float]:
+        """Adaptation of initial parameters for double Gaussain to data
+
+        Returns:
+            list[float]: list of peaks
+            list[float]: list of parameters
+        """
         self._find_peaks()
-        """data = {
-            "height": self.height,
-            "center": self.center,
-            "width": self.width,
-            "fwhm": self.fwhm,
-        }
-        dataframe = pd.DataFrame(data=data)
-        self.peaks = dataframe.drop(labels=peaks)"""
 
         self.opt_params, covar = curve_fit(
             self._2gaussian,
@@ -151,10 +212,6 @@ class GaussianFit:
             ],
         )
         _stderr = np.sqrt(np.diag(covar))
-
-        """self.peaks["height"].tolist(),
-        self.peaks["center"].tolist(),
-        self.peaks["width"].tolist()"""
 
         self.pars_1 = self.opt_params[0:3]
         self.pars_2 = self.opt_params[3:6]
@@ -174,16 +231,14 @@ class GaussianFit:
             self.residual,
         )
 
-    def _gauss_fit3(self):
+    def _gauss_fit3(self) -> list[float]:
+        """Adaptation of initial parameters for triple Gaussain to data
+
+        Returns:
+            list[float]: list of peaks
+            list[float]: list of parameters
+        """
         self._find_peaks()
-        """data = {
-            "height": self.height,
-            "center": self.center,
-            "width": self.width,
-            "fwhm": self.fwhm,
-        }
-        dataframe = pd.DataFrame(data=data)
-        self.peaks = dataframe.drop(labels=peaks)"""
 
         self.opt_params, covar = curve_fit(
             self._3gaussian,
@@ -196,10 +251,6 @@ class GaussianFit:
             ],
         )
         _stderr = np.sqrt(np.diag(covar))
-
-        """self.peaks["height"].tolist(),
-        self.peaks["center"].tolist(),
-        self.peaks["width"].tolist()"""
 
         self.pars_1 = self.opt_params[0:3]
         self.pars_2 = self.opt_params[3:6]
@@ -229,20 +280,23 @@ class GaussianFit:
         sample_mass: float,
         abs_coeff: float,
         peaks: int = 3,
-    ):
+    ) -> list[float]:
         """
         Calculates the number of active sites from the coefficients
         obtained from fitting the peaks.
 
         Args:
-            sample_mass (float): Sample mass used for the respective measurement. Given in grams.
-            abs_coeff (float): Absorption coefficient of the measured material. Given in SI units.
+            sample_mass (float): Sample mass used for the respective measurement.
+            Given in grams.
+            abs_coeff (float): Absorption coefficient of the measured material.
+            Given in SI units.
+            peaks (int): number of fitted peaks. Defaults to 3.
 
         Raises:
             ValueError: If either or both sample_mass and abs_coeff are not given.
 
         Returns:
-           float: number of active sites, both Bronsted and Lewis.
+           list[float]: number of active sites, both Bronsted and Lewis.
         """
 
         self._find_peaks()
@@ -280,7 +334,12 @@ class GaussianFit:
 
         return self.number_of_sites
 
-    def get_init_parameters(self):
+    def get_init_parameters(self) -> dict:
+        """Gets initial fitting parameters.
+
+        Returns:
+            dict: initial fitting parameters according to variable
+        """
         return {
             "height": self.height,
             "center": self.center,
@@ -288,7 +347,12 @@ class GaussianFit:
             "fwhm": self.fwhm,
         }
 
-    def get_parameters(self):
+    def get_parameters(self) -> pd.DataFrame:
+        """Gets final fitting parameters.
+
+        Returns:
+            pd.DataFrame: amplitude, center, sigma and peak area of fits
+        """
         self._gauss_fit()
         data = {
             "amplitude": self.height,
@@ -304,6 +368,7 @@ class GaussianFit:
         return parameters
 
     def get_control_plot(self) -> None:
+        """Produces plot of data and found peaks."""
         self._find_peaks()
         plt.plot(
             self.x_array,
@@ -323,6 +388,11 @@ class GaussianFit:
         plt.show()
 
     def get_gaussian2_plot(self, name: str) -> None:
+        """Produces plot with two Gaussian fits.
+
+        Args:
+            name (str): name of the saved file
+        """
         self._find_peaks()
         self._gauss_fit2()
         fig = plt.figure(figsize=(6, 4.5))
@@ -379,6 +449,11 @@ class GaussianFit:
         fig.show()
 
     def get_gaussian3_plot(self, name: str) -> None:
+        """Produces plot with three Gausian fits.
+
+        Args:
+            name (str): name of the saved file
+        """
         self._find_peaks()
         self._gauss_fit3()
         fig = plt.figure(figsize=(6, 4.5))
