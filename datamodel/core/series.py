@@ -5,8 +5,7 @@ from pydantic import Field
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
 
-
-from .units import Units
+from astropy.units import UnitBase
 
 
 @forge_signature
@@ -26,7 +25,7 @@ class Series(sdRDM.DataModel):
         multiple=True,
     )
 
-    unit: Optional[Units] = Field(
+    unit: Optional[UnitBase] = Field(
         default=None,
         description="Unit of the data points contained in `data_array`.",
     )

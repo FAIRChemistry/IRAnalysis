@@ -3,7 +3,6 @@ classDiagram
     IRAnalysis *-- Experiment
     Experiment *-- MeasurementData
     MeasurementData *-- Series
-    Series *-- Units
     
     class IRAnalysis {
         +datetime datetime_created*
@@ -24,18 +23,7 @@ classDiagram
     
     class Series {
         +float[0..*] data_array
-        +Units unit
-    }
-    
-    class Units {
-        << Enumeration >>
-        +ARBITRARY
-        +NM
-        +UM
-        +MM
-        +CM
-        +METER
-        +RECI_CM
+        +UnitClass unit
     }
     
 ```
