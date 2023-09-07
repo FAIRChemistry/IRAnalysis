@@ -28,15 +28,51 @@ This could be a very basic object that keeps track of the entire experiment.
 - __name__
   - Type: string
   - Description: A descriptive name for the overarching experiment.
-- measurement_data
-  - Type: [MeasurementData](#measurementdata)
-  - Description: Each single measurement is contained in one `measurement_data` object.
+- measurements
+  - Type: [Measurement](#measurement)
+  - Description: Each single measurement is contained in one `measurement` object.
   - Multiple: True
+- corrected_spectra
+  - Type:
+  - Description:
 
 
-### MeasurementData
+### Measurement
 
-Container for a single measurement.
+Wow. Such docstring.
+
+- name
+  - Type: string
+  - Description: Descriptive name for the single measurement.
+- measurement_type
+  - Type: [MeasurementTypes](#measurementtypes)
+- measurement_data
+  - Type: [Dataset](#dataset)
+  - Description: Series objects of the measured axes.
+
+
+### CorrectedSpectrum
+
+Lorem ipsum.
+
+- name
+  - Type: string
+  - Description: Descriptive name for the corrected spectrum.
+- background_references
+  - Type: @Measurement.id
+  - Description: References to the IDs of background measurements used.
+  - Multiple: True
+- sample_reference
+  - Type: @Measurement.id
+  - Description: Reference to the ID of the sample measurement.
+- corrected_data
+  - Type: [Dataset](#dataset)
+  - Description: Dataset based on a measured sample and corrected with one or more backgrounds.
+
+
+### Dataset
+
+Container for a single set of data.
 
 - timestamp
   - Type: datetime
@@ -63,3 +99,16 @@ Abstract Container for a measured Series (i.e. one axis).
 - unit
   - Type: UnitClass
   - Description: Unit of the data points contained in `data_array`.
+
+
+## Enumerations
+
+
+### MeasurementTypes
+
+lorem ipsum.
+
+```python
+BACKGROUND = auto()
+SAMPLE = auto()
+```
