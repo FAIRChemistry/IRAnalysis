@@ -5,10 +5,11 @@ from pydantic import Field
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
 
-from datetime import datetime as Datetime
 
-from .measurementdata import MeasurementData
-from .series import Series
+from .dataset import Dataset
+from .correctedspectrum import CorrectedSpectrum
+from .measurementtypes import MeasurementTypes
+from .measurement import Measurement
 
 
 @forge_signature
@@ -27,40 +28,77 @@ class Experiment(sdRDM.DataModel):
         description="A descriptive name for the overarching experiment.",
     )
 
-    measurement_data: List[MeasurementData] = Field(
-        description=(
-            "Each single measurement is contained in one `measurement_data` object."
-        ),
+    measurements: List[Measurement] = Field(
+        description="Each single measurement is contained in one `measurement` object.",
         default_factory=ListPlus,
         multiple=True,
     )
 
-    def add_to_measurement_data(
+    corrected_spectra: List[CorrectedSpectrum] = Field(
+        description="List of background-corrected spectra",
+        default_factory=ListPlus,
+        multiple=True,
+    )
+
+    def add_to_measurements(
         self,
-        timestamp: Optional[Datetime] = None,
-        x_axis: Optional[Series] = None,
-        y_axis: Optional[Series] = None,
+        name: Optional[str] = None,
+        measurement_type: Optional[MeasurementTypes] = None,
+        measurement_data: Optional[Dataset] = None,
         id: Optional[str] = None,
     ) -> None:
         """
-        This method adds an object of type 'MeasurementData' to attribute measurement_data
+        This method adds an object of type 'Measurement' to attribute measurements
 
         Args:
-            id (str): Unique identifier of the 'MeasurementData' object. Defaults to 'None'.
-            timestamp (): Date and time the measurement was performed.. Defaults to None
-            x_axis (): The object containing data points and unit of the x-axis.. Defaults to None
-            y_axis (): The object containing data points and unit of the y-axis.. Defaults to None
+            id (str): Unique identifier of the 'Measurement' object. Defaults to 'None'.
+            name (): Descriptive name for the single measurement.. Defaults to None
+            measurement_type (): Type of measurement.. Defaults to None
+            measurement_data (): Series objects of the measured axes.. Defaults to None
         """
 
         params = {
-            "timestamp": timestamp,
-            "x_axis": x_axis,
-            "y_axis": y_axis,
+            "name": name,
+            "measurement_type": measurement_type,
+            "measurement_data": measurement_data,
         }
 
         if id is not None:
             params["id"] = id
 
-        self.measurement_data.append(MeasurementData(**params))
+        self.measurements.append(Measurement(**params))
 
-        return self.measurement_data[-1]
+        return self.measurements[-1]
+
+    def add_to_corrected_spectra(
+        self,
+        name: Optional[str] = None,
+        background_references: List[Measurement] = ListPlus(),
+        sample_reference: Optional[Measurement] = None,
+        corrected_data: Optional[Dataset] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        """
+        This method adds an object of type 'CorrectedSpectrum' to attribute corrected_spectra
+
+        Args:
+            id (str): Unique identifier of the 'CorrectedSpectrum' object. Defaults to 'None'.
+            name (): Descriptive name for the corrected spectrum.. Defaults to None
+            background_references (): References to the IDs of background measurements used.. Defaults to ListPlus()
+            sample_reference (): Reference to the ID of the sample measurement.. Defaults to None
+            corrected_data (): Dataset based on a measured sample and corrected with one or more backgrounds.. Defaults to None
+        """
+
+        params = {
+            "name": name,
+            "background_references": background_references,
+            "sample_reference": sample_reference,
+            "corrected_data": corrected_data,
+        }
+
+        if id is not None:
+            params["id"] = id
+
+        self.corrected_spectra.append(CorrectedSpectrum(**params))
+
+        return self.corrected_spectra[-1]

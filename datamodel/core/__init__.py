@@ -1,13 +1,19 @@
 from .iranalysis import IRAnalysis
 from .experiment import Experiment
-from .measurementdata import MeasurementData
+from .measurement import Measurement
+from .correctedspectrum import CorrectedSpectrum
+from .dataset import Dataset
 from .series import Series
+from .measurementtypes import MeasurementTypes
 
 __doc__ = ""
 
 __all__ = [
     "IRAnalysis",
     "Experiment",
-    "MeasurementData",
+    "Measurement",
+    "CorrectedSpectrum",
+    "Dataset",
     "Series",
+    "MeasurementTypes",
 ]
