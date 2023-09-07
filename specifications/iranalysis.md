@@ -33,8 +33,9 @@ This could be a very basic object that keeps track of the entire experiment.
   - Description: Each single measurement is contained in one `measurement` object.
   - Multiple: True
 - corrected_spectra
-  - Type:
-  - Description:
+  - Type: [CorrectedSpectrum](#correctedspectrum)
+  - Description: List of background-corrected spectra
+  - Multiple: True
 
 
 ### Measurement
@@ -46,6 +47,7 @@ Wow. Such docstring.
   - Description: Descriptive name for the single measurement.
 - measurement_type
   - Type: [MeasurementTypes](#measurementtypes)
+  - Description: Type of measurement.
 - measurement_data
   - Type: [Dataset](#dataset)
   - Description: Series objects of the measured axes.
