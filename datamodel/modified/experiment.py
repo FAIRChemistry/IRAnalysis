@@ -6,10 +6,10 @@ from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
 
 
-from .dataset import Dataset
-from .correctedspectrum import CorrectedSpectrum
-from .measurement import Measurement
-from .measurementtypes import MeasurementTypes
+from datamodel.core.correctedspectrum import CorrectedSpectrum
+from datamodel.core.dataset import Dataset
+from datamodel.core.measurementtypes import MeasurementTypes
+from datamodel.core.measurement import Measurement
 
 
 @forge_signature
@@ -102,3 +102,6 @@ class Experiment(sdRDM.DataModel):
         self.corrected_spectra.append(CorrectedSpectrum(**params))
 
         return self.corrected_spectra[-1]
+
+    def this_is_my_custom_method(self):
+        ...

@@ -7,8 +7,8 @@ from sdRDM.base.utils import forge_signature, IDGenerator
 
 
 from .dataset import Dataset
-from .measurementtypes import MeasurementTypes
 from .measurement import Measurement
+from .measurementtypes import MeasurementTypes
 
 
 @forge_signature

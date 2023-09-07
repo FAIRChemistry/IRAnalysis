@@ -111,6 +111,6 @@ Abstract Container for a measured Series (i.e. one axis).
 lorem ipsum.
 
 ```python
-BACKGROUND = auto()
-SAMPLE = auto()
+BACKGROUND = "Background"
+SAMPLE = "Sample"
 ```
