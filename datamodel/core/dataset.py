@@ -22,7 +22,7 @@ class Dataset(sdRDM.DataModel):
 
     timestamp: Optional[Datetime] = Field(
         default=None,
-        description="Date and time the measurement was performed.",
+        description="Date and time the data was recorded",
     )
 
     x_axis: Optional[Series] = Field(

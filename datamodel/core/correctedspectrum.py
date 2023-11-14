@@ -6,15 +6,16 @@ from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
 
 
+from .measurementtypes import MeasurementTypes
 from .dataset import Dataset
 from .measurement import Measurement
-from .measurementtypes import MeasurementTypes
 
 
 @forge_signature
 class CorrectedSpectrum(sdRDM.DataModel):
 
-    """Lorem ipsum."""
+    """Resulting spectrum after removing the background and unloaded sample intensities.
+    """
 
     id: Optional[str] = Field(
         description="Unique identifier of the given object.",
@@ -35,7 +36,7 @@ class CorrectedSpectrum(sdRDM.DataModel):
     )
 
     sample_reference: Union[Measurement, str, None] = Field(
-        default=Measurement(),
+        default=None,
         reference="Measurement.id",
         description="Reference to the ID of the sample measurement.",
     )
@@ -50,7 +51,10 @@ class CorrectedSpectrum(sdRDM.DataModel):
 
     def add_to_background_references(
         self,
-        name: Optional[str] = None,
+        name: str,
+        geometry: Optional[str] = None,
+        temperature: Optional[float] = None,
+        pressure: Optional[float] = None,
         measurement_type: Optional[MeasurementTypes] = None,
         measurement_data: Optional[Dataset] = None,
         id: Optional[str] = None,
@@ -60,13 +64,19 @@ class CorrectedSpectrum(sdRDM.DataModel):
 
         Args:
             id (str): Unique identifier of the 'Measurement' object. Defaults to 'None'.
-            name (): Descriptive name for the single measurement.. Defaults to None
+            name (): Descriptive name for the single measurement..
+            geometry (): Spectrometer geometry used for the measurement. Defaults to None
+            temperature (): Temperature at which the measurement was performed.. Defaults to None
+            pressure (): Pressure at which the measurement was performed.. Defaults to None
             measurement_type (): Type of measurement.. Defaults to None
             measurement_data (): Series objects of the measured axes.. Defaults to None
         """
 
         params = {
             "name": name,
+            "geometry": geometry,
+            "temperature": temperature,
+            "pressure": pressure,
             "measurement_type": measurement_type,
             "measurement_data": measurement_data,
         }

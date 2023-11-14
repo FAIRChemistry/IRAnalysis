@@ -5,14 +5,15 @@ from pydantic import Field
 from sdRDM.base.utils import forge_signature, IDGenerator
 
 
-from .dataset import Dataset
 from .measurementtypes import MeasurementTypes
+from .dataset import Dataset
 
 
 @forge_signature
 class Measurement(sdRDM.DataModel):
 
-    """Wow. Such docstring."""
+    """Contains all measurements done for the experiment. E.g. sample, unloaded sample and background.
+    """
 
     id: Optional[str] = Field(
         description="Unique identifier of the given object.",
@@ -20,9 +21,24 @@ class Measurement(sdRDM.DataModel):
         xml="@id",
     )
 
-    name: Optional[str] = Field(
-        default=None,
+    name: str = Field(
+        ...,
         description="Descriptive name for the single measurement.",
+    )
+
+    geometry: Optional[str] = Field(
+        default=None,
+        description="Spectrometer geometry used for the measurement",
+    )
+
+    temperature: Optional[float] = Field(
+        default=None,
+        description="Temperature at which the measurement was performed.",
+    )
+
+    pressure: Optional[float] = Field(
+        default=None,
+        description="Pressure at which the measurement was performed.",
     )
 
     measurement_type: Optional[MeasurementTypes] = Field(
