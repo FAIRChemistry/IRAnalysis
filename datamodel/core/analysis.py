@@ -4,28 +4,23 @@ from typing import Optional, Union, List
 from pydantic import Field, validator
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
-
-
-from .measurementtypes import MeasurementTypes
-from .dataset import Dataset
+from astropy.units import UnitBase
 from .measurement import Measurement
+from .result import Result
+from .measurementtypes import MeasurementTypes
+from .calculation import Calculation
+from .dataset import Dataset
 
 
 @forge_signature
-class CorrectedSpectrum(sdRDM.DataModel):
-
-    """Resulting spectrum after removing the background and unloaded sample intensities.
+class Analysis(sdRDM.DataModel):
+    """Contains all steps and parameters used to manipulate data and to calculate results from one sample measurement.
     """
 
     id: Optional[str] = Field(
         description="Unique identifier of the given object.",
-        default_factory=IDGenerator("correctedspectrumINDEX"),
+        default_factory=IDGenerator("analysisINDEX"),
         xml="@id",
-    )
-
-    name: Optional[str] = Field(
-        default=None,
-        description="Descriptive name for the corrected spectrum.",
     )
 
     background_references: List[Union[Measurement, str]] = Field(
@@ -47,6 +42,18 @@ class CorrectedSpectrum(sdRDM.DataModel):
             "Dataset based on a measured sample and corrected with one or more"
             " backgrounds."
         ),
+    )
+
+    calculations: List[Calculation] = Field(
+        description="Calculations performed during the analysis.",
+        default_factory=ListPlus,
+        multiple=True,
+    )
+
+    measurement_results: List[Result] = Field(
+        description="List of final results calculated from one measurement.",
+        default_factory=ListPlus,
+        multiple=True,
     )
 
     def add_to_background_references(
@@ -71,7 +78,6 @@ class CorrectedSpectrum(sdRDM.DataModel):
             measurement_type (): Type of measurement.. Defaults to None
             measurement_data (): Series objects of the measured axes.. Defaults to None
         """
-
         params = {
             "name": name,
             "geometry": geometry,
@@ -80,18 +86,58 @@ class CorrectedSpectrum(sdRDM.DataModel):
             "measurement_type": measurement_type,
             "measurement_data": measurement_data,
         }
-
         if id is not None:
             params["id"] = id
-
         self.background_references.append(Measurement(**params))
-
         return self.background_references[-1]
+
+    def add_to_calculations(
+        self,
+        formula: str,
+        parameters: List[float] = ListPlus(),
+        units: List[UnitBase] = ListPlus(),
+        id: Optional[str] = None,
+    ) -> None:
+        """
+        This method adds an object of type 'Calculation' to attribute calculations
+
+        Args:
+            id (str): Unique identifier of the 'Calculation' object. Defaults to 'None'.
+            formula (): Formula for the used calculation..
+            parameters (): Parameters used for the given formula. Ordered chronologically as described in the formula definition.. Defaults to ListPlus()
+            units (): Units of the values contained in `parameters`. Ordered chronologically as in the parameters list.. Defaults to ListPlus()
+        """
+        params = {"formula": formula, "parameters": parameters, "units": units}
+        if id is not None:
+            params["id"] = id
+        self.calculations.append(Calculation(**params))
+        return self.calculations[-1]
+
+    def add_to_measurement_results(
+        self,
+        name: str,
+        values: List[float] = ListPlus(),
+        units: List[UnitBase] = ListPlus(),
+        id: Optional[str] = None,
+    ) -> None:
+        """
+        This method adds an object of type 'Result' to attribute measurement_results
+
+        Args:
+            id (str): Unique identifier of the 'Result' object. Defaults to 'None'.
+            name (): Name of the calculated value.
+            values (): Value(s) for the specified result.. Defaults to ListPlus()
+            units (): Units of the values contained in `values`. Ordered chronologically as in the values list.. Defaults to ListPlus()
+        """
+        params = {"name": name, "values": values, "units": units}
+        if id is not None:
+            params["id"] = id
+        self.measurement_results.append(Result(**params))
+        return self.measurement_results[-1]
 
     @validator("background_references")
     def get_background_references_reference(cls, value):
         """Extracts the ID from a given object to create a reference"""
-
         from .measurement import Measurement
 
         if isinstance(value, Measurement):
@@ -109,7 +155,6 @@ class CorrectedSpectrum(sdRDM.DataModel):
     @validator("sample_reference")
     def get_sample_reference_reference(cls, value):
         """Extracts the ID from a given object to create a reference"""
-
         from .measurement import Measurement
 
         if isinstance(value, Measurement):

@@ -8,7 +8,6 @@ from sdRDM.base.utils import forge_signature, IDGenerator
 
 @forge_signature
 class SamplePreparation(sdRDM.DataModel):
-
     """This keeps track of important synthesis parameters relevant for later analysis.
     """
 

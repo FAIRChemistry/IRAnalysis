@@ -2,21 +2,22 @@ from .iranalysis import IRAnalysis
 from .experiment import Experiment
 from .samplepreparation import SamplePreparation
 from .measurement import Measurement
-from .correctedspectrum import CorrectedSpectrum
-from .results import Results
+from .analysis import Analysis
+from .calculation import Calculation
+from .result import Result
 from .dataset import Dataset
 from .series import Series
 from .measurementtypes import MeasurementTypes
 
 __doc__ = ""
-
 __all__ = [
     "IRAnalysis",
     "Experiment",
     "SamplePreparation",
     "Measurement",
-    "CorrectedSpectrum",
-    "Results",
+    "Analysis",
+    "Calculation",
+    "Result",
     "Dataset",
     "Series",
     "MeasurementTypes",

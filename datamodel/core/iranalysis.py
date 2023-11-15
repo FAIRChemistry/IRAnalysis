@@ -4,18 +4,16 @@ from typing import List, Optional
 from pydantic import Field
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
-
 from datetime import datetime as Datetime
-
-from .samplepreparation import SamplePreparation
-from .experiment import Experiment
-from .correctedspectrum import CorrectedSpectrum
 from .measurement import Measurement
+from .experiment import Experiment
+from .samplepreparation import SamplePreparation
+from .analysis import Analysis
+from .result import Result
 
 
 @forge_signature
 class IRAnalysis(sdRDM.DataModel):
-
     """Most meta object of your data model with some examples of sensible fields."""
 
     id: Optional[str] = Field(
@@ -51,7 +49,8 @@ class IRAnalysis(sdRDM.DataModel):
         name: str,
         sample_preparation: Optional[SamplePreparation] = None,
         measurements: List[Measurement] = ListPlus(),
-        corrected_spectra: List[CorrectedSpectrum] = ListPlus(),
+        analysis: List[Analysis] = ListPlus(),
+        results: Optional[Result] = None,
         id: Optional[str] = None,
     ) -> None:
         """
@@ -62,19 +61,17 @@ class IRAnalysis(sdRDM.DataModel):
             name (): A descriptive name for the overarching experiment..
             sample_preparation (): Synthesis and preparation parameters. Defaults to None
             measurements (): Each single measurement is contained in one `measurement` object.. Defaults to ListPlus()
-            corrected_spectra (): List of background-corrected spectra. Defaults to ListPlus()
+            analysis (): Analysis procedure and parameters.. Defaults to ListPlus()
+            results (): List of final results calculated from measurements done for the experiment.. Defaults to None
         """
-
         params = {
             "name": name,
             "sample_preparation": sample_preparation,
             "measurements": measurements,
-            "corrected_spectra": corrected_spectra,
+            "analysis": analysis,
+            "results": results,
         }
-
         if id is not None:
             params["id"] = id
-
         self.experiment.append(Experiment(**params))
-
         return self.experiment[-1]

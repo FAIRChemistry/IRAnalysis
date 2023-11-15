@@ -3,15 +3,12 @@ import sdRDM
 from typing import Optional
 from pydantic import Field
 from sdRDM.base.utils import forge_signature, IDGenerator
-
-
 from .measurementtypes import MeasurementTypes
 from .dataset import Dataset
 
 
 @forge_signature
 class Measurement(sdRDM.DataModel):
-
     """Contains all measurements done for the experiment. E.g. sample, unloaded sample and background.
     """
 

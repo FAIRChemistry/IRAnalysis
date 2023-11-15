@@ -39,11 +39,13 @@ This could be a very basic object that keeps track of the entire experiment.
   - Type: [Measurement](#measurement)
   - Description: Each single measurement is contained in one `measurement` object.
   - Multiple: True
-- corrected_spectra
-  - Type: [CorrectedSpectrum](#correctedspectrum)
-  - Description: List of background-corrected spectra
+- analysis
+  - Type: [Analysis](#analysis)
+  - Description: Analysis procedure and parameters.
   - Multiple: True
-
+- results
+  - Type: [Result](#result)
+  - Description: List of final results calculated from measurements done for the experiment.
 
 
 ### SamplePreparation
@@ -90,14 +92,10 @@ Contains all measurements done for the experiment. E.g. sample, unloaded sample 
   - Type: [Dataset](#dataset)
   - Description: Series objects of the measured axes.
 
+### Analysis
 
-### CorrectedSpectrum
+Contains all steps and parameters used to manipulate data and to calculate results from one sample measurement.
 
-Resulting spectrum after removing the background and unloaded sample intensities.
-
-- name
-  - Type: string
-  - Description: Descriptive name for the corrected spectrum.
 - background_references
   - Type: @Measurement.id
   - Description: References to the IDs of background measurements used.
@@ -108,18 +106,47 @@ Resulting spectrum after removing the background and unloaded sample intensities
 - corrected_data
   - Type: [Dataset](#dataset)
   - Description: Dataset based on a measured sample and corrected with one or more backgrounds.
+- calculations
+  - Type: [Calculation](#calculation)
+  - Description: Calculations performed during the analysis.
+  - Multiple: True
+- measurement_results
+  - Type: [Result](#result)
+  - Description: List of final results calculated from one measurement.
+  - Multiple: True
 
 
-### Results
+### Calculation
 
-Resulting values calculated from the corrected spectrum
+Contains the formula and it's parameters used for a calculation during the analysis.
 
-- fitting_parameters
-  - Type: [Series](#series)
-  - Description: Object containing fitting parameters for all curves
-- n_active_sites
-  - Type: [Series](#series)
-  - Description: Object containing number of Lewis, Bronstedt and mixed active sites
+- __formula__
+  - Type: string
+  - Description: Formula for the used calculation.
+- parameters
+  - Type: float
+  - Description: Parameters used for the given formula. Ordered chronologically as described in the formula definition.
+  - Multiple: True
+- units
+  - Type: UnitClass
+  - Description: Units of the values contained in `parameters`. Ordered chronologically as in the parameters list.
+  - Multiple: True
+
+### Result
+
+Final result obtained from the analysis.
+
+- __name__
+  - Type: string
+  - Description: Name of the calculated value
+- values
+  - Type: float
+  - Description: Value(s) for the specified result.
+  - Multiple: True
+- units
+  - Type: UnitClass
+  - Description: Units of the values contained in `values`. Ordered chronologically as in the values list.
+  - Multiple: True
 
 
 ### Dataset

@@ -28,7 +28,7 @@ class IRDataFiles:
         self.decimal_separator = kwargs.get("decimal", ",")
         self.file_extension = kwargs.get("extension", "csv")
         self._loaded_ir_files = []
-        self._datamodel = DataModel
+        self._datamodel = None
         self.datetime_created = str(datetime.now())
         self.experiment_name = kwargs.get("experiment_name", "UnspecifiedExperiment")
 
@@ -80,7 +80,7 @@ class IRDataFiles:
         plt.show()
 
     @property
-    def datamodel (self):
+    def datamodel (self) -> DataModel:
         """Function to store raw measurement data from files as an IR 
         Measurement object.
 
@@ -116,3 +116,30 @@ class IRDataFiles:
     def datamodel(self, datamodel):
         if isinstance(datamodel, DataModel):
             self._datamodel = datamodel
+
+    def set_background(self, background_spectra: List) -> DataModel:
+        """
+        Function takes a list names of measurements within the DataModel 
+        and sets the enumeration for the measurement_type. Measurements
+        within the List are background the others are set to sample
+        automatically.
+
+        Args:
+            background_spectra (List): List of names of background measurements 
+                within the DataModel. 
+
+        Returns:
+            DataModel: DataModel with updated measurement_type for each
+                measurement
+        """
+        # Initialize DataModel if not already initialized
+        if  self._datamodel == None:
+            self._datamodel = self.datamodel
+        
+        measurements = self._datamodel.experiment[0].measurements 
+        for spectrum in measurements:
+            if spectrum.name in background_spectra:
+                spectrum.measurement_type = "Background"
+            else:
+                spectrum.measurement_type = "Sample"
+        return self._datamodel
