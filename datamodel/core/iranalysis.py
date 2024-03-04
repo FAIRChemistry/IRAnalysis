@@ -4,16 +4,19 @@ from typing import List, Optional
 from pydantic import Field
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
+
 from datetime import datetime as Datetime
+
+from .analysis import Analysis
 from .measurement import Measurement
 from .experiment import Experiment
-from .samplepreparation import SamplePreparation
-from .analysis import Analysis
 from .result import Result
+from .samplepreparation import SamplePreparation
 
 
 @forge_signature
 class IRAnalysis(sdRDM.DataModel):
+
     """Most meta object of your data model with some examples of sensible fields."""
 
     id: Optional[str] = Field(
@@ -64,6 +67,7 @@ class IRAnalysis(sdRDM.DataModel):
             analysis (): Analysis procedure and parameters.. Defaults to ListPlus()
             results (): List of final results calculated from measurements done for the experiment.. Defaults to None
         """
+
         params = {
             "name": name,
             "sample_preparation": sample_preparation,
@@ -71,7 +75,10 @@ class IRAnalysis(sdRDM.DataModel):
             "analysis": analysis,
             "results": results,
         }
+
         if id is not None:
             params["id"] = id
+
         self.experiment.append(Experiment(**params))
+
         return self.experiment[-1]

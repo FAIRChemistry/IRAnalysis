@@ -3,12 +3,15 @@ import sdRDM
 from typing import Optional
 from pydantic import Field
 from sdRDM.base.utils import forge_signature, IDGenerator
+
 from datetime import datetime as Datetime
+
 from .series import Series
 
 
 @forge_signature
 class Dataset(sdRDM.DataModel):
+
     """Container for a single set of data."""
 
     id: Optional[str] = Field(

@@ -11,8 +11,7 @@ from typing import List, Optional, Union
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-
-from datamodel.core import measurement
+from astropy import units as u
 
 
 class IRDataFiles:
@@ -23,16 +22,26 @@ class IRDataFiles:
 
     def __init__(self, ir_file_directory: str, **kwargs):
         self.directory = ir_file_directory
+        self.kwargs = kwargs
         self.datamodel_directory = kwargs.get("datamodel_directory", "./")
+        self.detection = kwargs.get("detection", "absorbance")
         self.separator = kwargs.get("separator", ";")
+        self.header = kwargs.get("header", None)
+        self.column_sequence = kwargs.get(
+            "column_sequence", ["wavenumber", "intensity"]
+        )
         self.decimal_separator = kwargs.get("decimal", ",")
         self.file_extension = kwargs.get("extension", "csv")
         self._loaded_ir_files = []
         self._datamodel = None
+        self._datamodel_lib = DataModel.from_markdown(
+            f"{self.datamodel_directory}/specifications"
+        )
         self.datetime_created = str(datetime.now())
         self.experiment_name = kwargs.get("experiment_name", "UnspecifiedExperiment")
+        self._background_df = pd.DataFrame({"wavenumber": [], "intensity": []})
 
-    @property    
+    @property
     def files(self) -> List[str]:
         """This function returns all files found in the specified
         directory with the given file extension.
@@ -43,18 +52,18 @@ class IRDataFiles:
         os.chdir(self.directory)
         self._loaded_ir_files = glob.glob(f"*.{self.file_extension}")
         return self._loaded_ir_files
-    
+
     @files.setter
     def files(self, user_ir_files: List[str]):
-        self._loaded_ir_files = user_ir_files 
+        self._loaded_ir_files = user_ir_files
         return self._loaded_ir_files
 
-    def show_data(self, wavenumber_region=(1560, 1400), legend: bool=False):
+    def show_raw_data(self, wavenumber_region=(1560, 1400), legend: bool = False):
         """
         This function generates one plot with every measurement from the
         dataset.
         Args:
-            wavenumber_region (tuple, optional): Desired wavenumber 
+            wavenumber_region (tuple, optional): Desired wavenumber
                 region to show. Defaults to (1560, 1400).
             legend (bool, optional): Wheter to show a legend containing
                 the corresponding filenames. Default is False.
@@ -64,82 +73,135 @@ class IRDataFiles:
         fig, ax = plt.subplots()
         for spectrum in files:
             file_location = str(self.directory) + spectrum
-            spectrum_df = pd.read_csv(file_location, header=None, 
-                                      delimiter=self.separator, 
-                                      decimal=self.decimal_separator)
+            spectrum_df = pd.read_csv(
+                file_location,
+                delimiter=self.separator,
+                decimal=self.decimal_separator,
+                names=self.column_sequence,
+                header=self.header,
+            )
 
-            #truncating spectrum to desired region
-            spectrum_df = spectrum_df[(spectrum_df[0] < wavenumber_region.max()) 
-                                      & (spectrum_df[0] > wavenumber_region.min())]
-            ax.plot(spectrum_df[0], spectrum_df[1], label=spectrum)
+            # truncating spectrum to desired region
+            spectrum_df = spectrum_df[
+                (spectrum_df["wavenumber"] < wavenumber_region.max())
+                & (spectrum_df["wavenumber"] > wavenumber_region.min())
+            ]
+            ax.plot(spectrum_df["wavenumber"], spectrum_df["intensity"], label=spectrum)
         plt.xlim(wavenumber_region)
         ax.set_xlabel("$\\nu$ / cm$^{-1}$")
-        ax.set_ylabel("$A$ / a.u.")
+        ax.set_ylabel(f"{self.detection} / a.u.")
         if legend:
-            plt.legend(title="Filenames:", loc="upper left" , bbox_to_anchor=(-0.2,-0.2))
+            plt.legend(
+                title="Filenames:", loc="upper left", bbox_to_anchor=(-0.2, -0.2)
+            )
         plt.show()
 
     @property
-    def datamodel (self) -> DataModel:
-        """Function to store raw measurement data from files as an IR 
-        Measurement object.
+    def datamodel(self):
+        if self._datamodel == None:
+            self._initialize_datamodel()
+            return self._datamodel
+        else:
+            return self._datamodel
 
-        Returns:
-            datamodel_root (DataModel): With added Measurement objects
-        """
-        #Loading of DataModel as specified in markdown
-        os.chdir(self.datamodel_directory)
-        datamodel_lib = DataModel.from_markdown("./specifications")
-        #Creating an root instance of the DataModel
-        datamodel_root = datamodel_lib.IRAnalysis(
-            datetime_created = str(self.datetime_created),
-            )
-        #Creating an Experiment instance of the DataModel
-        datamodel_root_experiment = datamodel_lib.Experiment(name=self.experiment_name)
-        for spectrum in self.files:
-            file_location = str(self.directory) + spectrum
-            spectrum_df = pd.read_csv(file_location, header=None, 
-                                      delimiter=self.separator, 
-                                      decimal=self.decimal_separator)
-            #Creating Dataset instance an fill with spectral data
-            dataset = datamodel_lib.Dataset()
-            dataset.x_axis.data_array = spectrum_df.to_numpy()[0:,0]
-            dataset.y_axis.data_array = spectrum_df.to_numpy()[0:,1]
-            #Adding a Measurement instance to the Experiment
-            datamodel_root_experiment.add_to_measurements(name=spectrum,
-                                                          measurement_data=dataset)
-        datamodel_root.experiment.append(datamodel_root_experiment)
-        self._datamodel = datamodel_root
-        return self._datamodel
-    
     @datamodel.setter
     def datamodel(self, datamodel):
         if isinstance(datamodel, DataModel):
             self._datamodel = datamodel
 
-    def set_background(self, background_spectra: List) -> DataModel:
+    def _initialize_datamodel(self) -> DataModel:
+        """Function to generate new DataModel on basis of raw measurement
+            data from files.
+
+        Returns:
+            datamodel_root (DataModel): With added Measurement objects
         """
-        Function takes a list names of measurements within the DataModel 
+
+        # Loading of DataModel as specified in markdown
+        # os.chdir(self.datamodel_directory)
+        # self._datamodel_lib = DataModel.from_markdown("./specifications")
+
+        # Creating an root instance of the DataModel
+        datamodel_root = self._datamodel_lib.IRAnalysis(
+            datetime_created=str(self.datetime_created),
+        )
+        # Creating an Experiment instance of the DataModel
+        datamodel_root_experiment = self._datamodel_lib.Experiment(
+            name=self.experiment_name
+        )
+        for spectrum in self.files:
+            file_location = str(self.directory) + spectrum
+            spectrum_df = pd.read_csv(
+                file_location,
+                delimiter=self.separator,
+                decimal=self.decimal_separator,
+                names=self.column_sequence,
+                header=self.header,
+            )
+            # Creating individual Series and Dataset instance and fill
+            # with spectral data
+            wavenumber_series = self._datamodel_lib.Series(
+                data_array=spectrum_df["wavenumber"].to_numpy(), unit=u.cm ** (-1)
+            )
+            intensity_series = self._datamodel_lib.Series(
+                data_array=spectrum_df["intensity"].to_numpy(),
+                unit=u.dimensionless_unscaled,
+            )
+            dataset = self._datamodel_lib.Dataset(
+                x_axis=wavenumber_series, y_axis=intensity_series
+            )
+            # Adding a Measurement instance to the Experiment
+            datamodel_root_experiment.add_to_measurements(
+                name=spectrum, measurement_data=dataset
+            )
+        datamodel_root.experiment.append(datamodel_root_experiment)
+        self._datamodel = datamodel_root
+        return self._datamodel
+
+    def set_background(self, background_spectra: List):
+        """
+        Function takes a list names of measurements within the DataModel
         and sets the enumeration for the measurement_type. Measurements
         within the List are background the others are set to sample
         automatically.
 
         Args:
-            background_spectra (List): List of names of background measurements 
-                within the DataModel. 
+            background_spectra (List): List of names of background
+            measurements within the DataModel.
 
         Returns:
             DataModel: DataModel with updated measurement_type for each
                 measurement
         """
         # Initialize DataModel if not already initialized
-        if  self._datamodel == None:
-            self._datamodel = self.datamodel
-        
-        measurements = self._datamodel.experiment[0].measurements 
+        if self._datamodel == None:
+            self._initialize_datamodel()
+
+        measurements = self._datamodel.experiment[0].measurements  # type: ignore
         for spectrum in measurements:
             if spectrum.name in background_spectra:
                 spectrum.measurement_type = "Background"
+                self._define_background(spectrum)
             else:
                 spectrum.measurement_type = "Sample"
         return self._datamodel
+
+    def _define_background(self, measurement_object) -> pd.DataFrame:
+        """
+        Function sets the _background_df variable as a DataFrame with the
+        measurement_data from the background measurement object.
+
+        Args:
+            measurement_object (Measurement): Measurement object containing
+                the background measurement data
+
+        Returns:
+            background_df (pd.DataFrame): DataFrame with wavenumber and
+                intensity values of the background measurement object.
+        """
+        background_df_data = {
+            "wavenumber": measurement_object.measurement_data.x_axis.data_array,
+            "intensity": measurement_object.measurement_data.y_axis.data_array,
+        }
+        self._background_df = pd.DataFrame(background_df_data)
+        return self._background_df

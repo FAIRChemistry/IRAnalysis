@@ -4,11 +4,13 @@ from typing import List, Optional
 from pydantic import Field
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
+
 from astropy.units import UnitBase
 
 
 @forge_signature
 class Result(sdRDM.DataModel):
+
     """Final result obtained from the analysis."""
 
     id: Optional[str] = Field(

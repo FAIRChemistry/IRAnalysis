@@ -53,7 +53,7 @@ This could be a very basic object that keeps track of the entire experiment.
 This keeps track of important synthesis parameters relevant for later analysis.
 
 - __mass__
-  - Type: float
+  - Type: [Value](#value)
   - Description: Mass of the IR sample
 - literatureReference
   - Type: string
@@ -80,10 +80,10 @@ Contains all measurements done for the experiment. E.g. sample, unloaded sample 
   - Type: string
   - Description: Spectrometer geometry used for the measurement
 - temperature
-  - Type: float
+  - Type: [Value](#value)
   - Description: Temperature at which the measurement was performed.
 - pressure
-  - Type: float
+  - Type: [Value](#value)
   - Description: Pressure at which the measurement was performed.
 - measurement_type
   - Type: [MeasurementTypes](#measurementtypes)
@@ -96,16 +96,22 @@ Contains all measurements done for the experiment. E.g. sample, unloaded sample 
 
 Contains all steps and parameters used to manipulate data and to calculate results from one sample measurement.
 
-- background_references
+- background_reference
   - Type: @Measurement.id
-  - Description: References to the IDs of background measurements used.
-  - Multiple: True
+  - Description: Reference to the IDs of background measurements used.
 - sample_reference
   - Type: @Measurement.id
   - Description: Reference to the ID of the sample measurement.
 - corrected_data
   - Type: [Dataset](#dataset)
-  - Description: Dataset based on a measured sample and corrected with one or more backgrounds.
+  - Description: Dataset based on a measured sample and corrected with the background measurement and optionally baseline corrected.
+- baseline
+  - Type: [Series](#series)
+  - Description: Dataset containing the baseline values. Calculation is based on the classification algorithm FastChrom (Johnsen, L., et al., Analyst. 2013, 138, 3502-3511.).
+- bands
+  - Type: [Band](#band)
+  - Description: Bands assigned and quantified within the spectrum.
+  - Multiple: True
 - calculations
   - Type: [Calculation](#calculation)
   - Description: Calculations performed during the analysis.
@@ -114,6 +120,46 @@ Contains all steps and parameters used to manipulate data and to calculate resul
   - Type: [Result](#result)
   - Description: List of final results calculated from one measurement.
   - Multiple: True
+
+
+### Band
+
+Contains parameters of a band analyzed during the analysis.
+
+- assignment
+  - Type: string
+  - Description: Assignment of the band
+- fit
+  - Type: [Fit](#fit)
+  - Description: Calculated fit for the band.
+- location
+  - Type: [Value](#value)
+  - Description: Location of the band maximum.
+- start
+  - Type: [Value](#value)
+  - Description: First data point attributed to the band.
+- end
+  - Type: [Value](#value)
+  - Description: Last data point attributed to the band.
+
+
+### Fit
+
+Contains the fitting function and the found optimal parameters.
+
+- model
+  - Type: string
+  - Description: Description of the fitting model used (e.g. Gauss-Lorentz)
+- formula
+  - Type: string
+  - Description: Implemented formula of the fitting model. Corresponds with the sequence of fitting parameters.
+- parameters
+  - Type: [Value](#value)
+  - Description: Optained optimal fitting parameters. Sequence according to formula.
+  - Multiple: True
+- area
+  - Type: [Value](#value)
+  - Description: Total area of the fitted model curve.
 
 
 ### Calculation
@@ -178,6 +224,18 @@ Abstract Container for a measured Series (i.e. one axis).
 - unit
   - Type: UnitClass
   - Description: Unit of the data points contained in `data_array`.
+
+
+### Value
+
+Abstract Container for a single value-unit pair.
+
+- value
+  - Type: float
+  - Description: Value of the data point
+- unit
+  - Type: UnitClass
+  - Description: Unit of the data point contained in `value`.
 
 
 ## Enumerations

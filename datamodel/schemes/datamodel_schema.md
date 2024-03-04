@@ -5,12 +5,19 @@ classDiagram
     Experiment *-- Measurement
     Experiment *-- Analysis
     Experiment *-- Result
+    SamplePreparation *-- Value
     Measurement *-- MeasurementTypes
     Measurement *-- Dataset
+    Measurement *-- Value
     Analysis *-- Measurement
+    Analysis *-- Band
     Analysis *-- Calculation
     Analysis *-- Result
     Analysis *-- Dataset
+    Analysis *-- Series
+    Band *-- Fit
+    Band *-- Value
+    Fit *-- Value
     Dataset *-- Series
     
     class IRAnalysis {
@@ -29,7 +36,7 @@ classDiagram
     }
     
     class SamplePreparation {
-        +float mass*
+        +Value mass*
         +string[0..*] literatureReference
         +string composition
         +string probeMolecule
@@ -39,18 +46,35 @@ classDiagram
     class Measurement {
         +string name*
         +string geometry
-        +float temperature
-        +float pressure
+        +Value temperature
+        +Value pressure
         +MeasurementTypes measurement_type
         +Dataset measurement_data
     }
     
     class Analysis {
-        +Measurement[0..*] background_references
+        +Measurement background_reference
         +Measurement sample_reference
         +Dataset corrected_data
+        +Series baseline
+        +Band[0..*] bands
         +Calculation[0..*] calculations
         +Result[0..*] measurement_results
+    }
+    
+    class Band {
+        +string assignment
+        +Fit fit
+        +Value location
+        +Value start
+        +Value end
+    }
+    
+    class Fit {
+        +string model
+        +string formula
+        +Value[0..*] parameters
+        +Value area
     }
     
     class Calculation {
@@ -73,6 +97,11 @@ classDiagram
     
     class Series {
         +float[0..*] data_array
+        +UnitClass unit
+    }
+    
+    class Value {
+        +float value
         +UnitClass unit
     }
     

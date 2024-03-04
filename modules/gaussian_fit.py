@@ -94,16 +94,12 @@ class GaussianFit:
         Returns:
             int: number of peaks found
         """
-        correction = ((max(self.x_array) - min(self.x_array)) + 1) / len(
-            self.y_array
-        )
+        correction = ((max(self.x_array) - min(self.x_array)) + 1) / len(self.y_array)
 
         peaks, _ = find_peaks(self.y_array, height=self.threshold, distance=10)
         peak_stats = peak_widths(self.y_array, peaks, rel_height=0.05)
 
-        width = [
-            peak_stats[0][peak] * correction for peak in range(len(peaks))
-        ]
+        width = [peak_stats[0][peak] * correction for peak in range(len(peaks))]
         height = [peak_stats[1][peak] for peak in range(len(peaks))]
         center = []
         fwhm = []
@@ -138,9 +134,7 @@ class GaussianFit:
             * (np.exp((-1.0 / 2.0) * (((self.x_array - cen1) / sigma1) ** 2)))
         )
 
-    def _2gaussian(
-        self, x, amp1, cen1, sigma1, amp2, cen2, sigma2
-    ) -> function:
+    def _2gaussian(self, x, amp1, cen1, sigma1, amp2, cen2, sigma2) -> function:
         """Definition of doule Gaussian (for fitting two peaks)
 
         Args:

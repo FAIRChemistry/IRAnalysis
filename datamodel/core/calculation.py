@@ -4,13 +4,14 @@ from typing import List, Optional
 from pydantic import Field
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
+
 from astropy.units import UnitBase
 
 
 @forge_signature
 class Calculation(sdRDM.DataModel):
-    """Contains the formula and it's parameters used for a calculation during the analysis.
-    """
+
+    """Contains the formula and it's parameters used for a calculation during the analysis."""
 
     id: Optional[str] = Field(
         description="Unique identifier of the given object.",

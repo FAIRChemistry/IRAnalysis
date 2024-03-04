@@ -6,10 +6,13 @@ from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
 
 
+from .value import Value
+
+
 @forge_signature
 class SamplePreparation(sdRDM.DataModel):
-    """This keeps track of important synthesis parameters relevant for later analysis.
-    """
+
+    """This keeps track of important synthesis parameters relevant for later analysis."""
 
     id: Optional[str] = Field(
         description="Unique identifier of the given object.",
@@ -17,9 +20,9 @@ class SamplePreparation(sdRDM.DataModel):
         xml="@id",
     )
 
-    mass: float = Field(
-        ...,
+    mass: Value = Field(
         description="Mass of the IR sample",
+        default=Value(),
     )
 
     literatureReference: List[str] = Field(

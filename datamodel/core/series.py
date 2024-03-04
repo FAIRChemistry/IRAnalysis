@@ -4,11 +4,13 @@ from typing import List, Optional
 from pydantic import Field
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
+
 from astropy.units import UnitBase
 
 
 @forge_signature
 class Series(sdRDM.DataModel):
+
     """Abstract Container for a measured Series (i.e. one axis)."""
 
     id: Optional[str] = Field(

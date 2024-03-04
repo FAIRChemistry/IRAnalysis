@@ -83,9 +83,7 @@ class IRDataHandler:
                         .str.replace(",", ".")
                         .astype(float)
                     )
-                self.bckgrnd_file["absorbance"] -= self.bckgrnd_file[
-                    "absorbance"
-                ][1402]
+                self.bckgrnd_file["absorbance"] -= self.bckgrnd_file["absorbance"][1402]
         return self.bckgrnd_file
 
     def extract_sample_data(self) -> list[pd.DataFrame]:
@@ -112,22 +110,16 @@ class IRDataHandler:
                     pass
                 else:
                     sample_file["wavenumber"] = (
-                        sample_file["wavenumber"]
-                        .str.replace(",", ".")
-                        .astype(float)
+                        sample_file["wavenumber"].str.replace(",", ".").astype(float)
                     )
                     sample_file["absorbance"] = (
-                        sample_file["absorbance"]
-                        .str.replace(",", ".")
-                        .astype(float)
+                        sample_file["absorbance"].str.replace(",", ".").astype(float)
                     )
                 sample_file["absorbance"] -= sample_file["absorbance"][1402]
                 self.sample_files.append(sample_file)
         return self.sample_files
 
-    def get_data(
-        self, list_of_df: list[pd.DataFrame] = None
-    ) -> list[pd.DataFrame]:
+    def get_data(self, list_of_df: list[pd.DataFrame] = None) -> list[pd.DataFrame]:
         """Corrects raw data by background correction.
 
         Args:
@@ -252,9 +244,7 @@ class IRDataHandler:
 if __name__ == "__main__":
     cwd = Path.cwd()
     folder = "TO_P84-RT_1zu5"
-    test = IRDataHandler(
-        path_to_directory=cwd / folder, folder=folder, decimal=","
-    )
+    test = IRDataHandler(path_to_directory=cwd / folder, folder=folder, decimal=",")
 
     print(test.extract_background_data())
     print(type(test.extract_background_data()))

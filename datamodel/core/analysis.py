@@ -4,18 +4,23 @@ from typing import Optional, Union, List
 from pydantic import Field, validator
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature, IDGenerator
+
 from astropy.units import UnitBase
-from .measurement import Measurement
-from .result import Result
-from .measurementtypes import MeasurementTypes
-from .calculation import Calculation
+
 from .dataset import Dataset
+from .calculation import Calculation
+from .band import Band
+from .fit import Fit
+from .series import Series
+from .measurement import Measurement
+from .value import Value
+from .result import Result
 
 
 @forge_signature
 class Analysis(sdRDM.DataModel):
-    """Contains all steps and parameters used to manipulate data and to calculate results from one sample measurement.
-    """
+
+    """Contains all steps and parameters used to manipulate data and to calculate results from one sample measurement."""
 
     id: Optional[str] = Field(
         description="Unique identifier of the given object.",
@@ -23,11 +28,10 @@ class Analysis(sdRDM.DataModel):
         xml="@id",
     )
 
-    background_references: List[Union[Measurement, str]] = Field(
+    background_reference: Union[Measurement, str, None] = Field(
+        default=None,
         reference="Measurement.id",
-        description="References to the IDs of background measurements used.",
-        default_factory=ListPlus,
-        multiple=True,
+        description="Reference to the IDs of background measurements used.",
     )
 
     sample_reference: Union[Measurement, str, None] = Field(
@@ -39,9 +43,24 @@ class Analysis(sdRDM.DataModel):
     corrected_data: Optional[Dataset] = Field(
         default=Dataset(),
         description=(
-            "Dataset based on a measured sample and corrected with one or more"
-            " backgrounds."
+            "Dataset based on a measured sample and corrected with the background"
+            " measurement and optionally baseline corrected."
         ),
+    )
+
+    baseline: Optional[Series] = Field(
+        default=Series(),
+        description=(
+            "Dataset containing the baseline values. Calculation is based on the"
+            " classification algorithm FastChrom (Johnsen, L., et al., Analyst. 2013,"
+            " 138, 3502-3511.)."
+        ),
+    )
+
+    bands: List[Band] = Field(
+        description="Bands assigned and quantified within the spectrum.",
+        default_factory=ListPlus,
+        multiple=True,
     )
 
     calculations: List[Calculation] = Field(
@@ -56,40 +75,41 @@ class Analysis(sdRDM.DataModel):
         multiple=True,
     )
 
-    def add_to_background_references(
+    def add_to_bands(
         self,
-        name: str,
-        geometry: Optional[str] = None,
-        temperature: Optional[float] = None,
-        pressure: Optional[float] = None,
-        measurement_type: Optional[MeasurementTypes] = None,
-        measurement_data: Optional[Dataset] = None,
+        assignment: Optional[str] = None,
+        fit: Optional[Fit] = None,
+        location: Optional[Value] = None,
+        start: Optional[Value] = None,
+        end: Optional[Value] = None,
         id: Optional[str] = None,
     ) -> None:
         """
-        This method adds an object of type 'Measurement' to attribute background_references
+        This method adds an object of type 'Band' to attribute bands
 
         Args:
-            id (str): Unique identifier of the 'Measurement' object. Defaults to 'None'.
-            name (): Descriptive name for the single measurement..
-            geometry (): Spectrometer geometry used for the measurement. Defaults to None
-            temperature (): Temperature at which the measurement was performed.. Defaults to None
-            pressure (): Pressure at which the measurement was performed.. Defaults to None
-            measurement_type (): Type of measurement.. Defaults to None
-            measurement_data (): Series objects of the measured axes.. Defaults to None
+            id (str): Unique identifier of the 'Band' object. Defaults to 'None'.
+            assignment (): Assignment of the band. Defaults to None
+            fit (): Calculated fit for the band.. Defaults to None
+            location (): Location of the band maximum.. Defaults to None
+            start (): First data point attributed to the band.. Defaults to None
+            end (): Last data point attributed to the band.. Defaults to None
         """
+
         params = {
-            "name": name,
-            "geometry": geometry,
-            "temperature": temperature,
-            "pressure": pressure,
-            "measurement_type": measurement_type,
-            "measurement_data": measurement_data,
+            "assignment": assignment,
+            "fit": fit,
+            "location": location,
+            "start": start,
+            "end": end,
         }
+
         if id is not None:
             params["id"] = id
-        self.background_references.append(Measurement(**params))
-        return self.background_references[-1]
+
+        self.bands.append(Band(**params))
+
+        return self.bands[-1]
 
     def add_to_calculations(
         self,
@@ -107,10 +127,18 @@ class Analysis(sdRDM.DataModel):
             parameters (): Parameters used for the given formula. Ordered chronologically as described in the formula definition.. Defaults to ListPlus()
             units (): Units of the values contained in `parameters`. Ordered chronologically as in the parameters list.. Defaults to ListPlus()
         """
-        params = {"formula": formula, "parameters": parameters, "units": units}
+
+        params = {
+            "formula": formula,
+            "parameters": parameters,
+            "units": units,
+        }
+
         if id is not None:
             params["id"] = id
+
         self.calculations.append(Calculation(**params))
+
         return self.calculations[-1]
 
     def add_to_measurement_results(
@@ -129,15 +157,24 @@ class Analysis(sdRDM.DataModel):
             values (): Value(s) for the specified result.. Defaults to ListPlus()
             units (): Units of the values contained in `values`. Ordered chronologically as in the values list.. Defaults to ListPlus()
         """
-        params = {"name": name, "values": values, "units": units}
+
+        params = {
+            "name": name,
+            "values": values,
+            "units": units,
+        }
+
         if id is not None:
             params["id"] = id
+
         self.measurement_results.append(Result(**params))
+
         return self.measurement_results[-1]
 
-    @validator("background_references")
-    def get_background_references_reference(cls, value):
+    @validator("background_reference")
+    def get_background_reference_reference(cls, value):
         """Extracts the ID from a given object to create a reference"""
+
         from .measurement import Measurement
 
         if isinstance(value, Measurement):
@@ -155,6 +192,7 @@ class Analysis(sdRDM.DataModel):
     @validator("sample_reference")
     def get_sample_reference_reference(cls, value):
         """Extracts the ID from a given object to create a reference"""
+
         from .measurement import Measurement
 
         if isinstance(value, Measurement):
