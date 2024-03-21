@@ -8,6 +8,8 @@ from scipy.stats import norm, cauchy
 from scipy.signal import find_peaks, peak_widths
 from scipy.optimize import curve_fit, curve_fit
 from numpy.typing import ArrayLike
+from astropy import units as u
+from datamodel.core.value import Value
 
 
 def _dataframe_truncate(dataframe: pd.DataFrame, wavenumber_region) -> pd.DataFrame:
@@ -106,7 +108,7 @@ def _fit_gl_curve(data_df: pd.DataFrame, curve_center: float) -> np.ndarray:
 
     Args:
         data_df (pd.DataFrame): DataFrame with wavenumber and intensity data
-        curve_center (float): Predicted center of the curve as starting 
+        curve_center (float): Predicted center of the curve as starting
             parameter for the algorithm
 
     Returns:
@@ -125,3 +127,50 @@ def _fit_gl_curve(data_df: pd.DataFrame, curve_center: float) -> np.ndarray:
         bounds=gl_bounds,
     )
     return popt_gl
+
+
+def _get_quantity_object(value_object, error=False, **kwargs) -> u.Quantity:
+    """Creates an Astropy Quantity object from the value and unit of a
+    value_object from the data model. Unit can be explicitly specified
+
+    Args:
+        value_object (Value): Value object from the IR data model
+        error (bool), optional: Whether to use the error value or the actual value
+        unit (string), optional: Desired unit of the value
+
+    Returns:
+        u.Quantity: Astropy Quantity object for the given value
+    """
+    unit = kwargs.get("unit", value_object.unit)
+    if error:
+        quantity_object = u.Quantity(value_object.error, unit)
+    else:
+        quantity_object = u.Quantity(value_object.value, unit)
+    return quantity_object
+
+
+def _auto_assign_band(peak_location: Value) -> str:
+    """Takes a band object from the data model, determines the smallest
+    difference in peak location and returns the corresponding dict key.
+
+    Args:
+        peak_location (Value): Band object of the data model that has location data.
+
+    Returns:
+        str: Peak assignment closest to known values
+    """
+    expected_locations = {
+        "Lewis": u.Quantity(1455, "1/cm"),
+        "Bronsted": u.Quantity(1545, "1/cm"),
+        "Mixed": u.Quantity(1491, "1/cm"),
+    }
+    difference_to_expected = np.array(
+        [
+            np.abs(exp_loc.value - peak_location.value)
+            for exp_loc in expected_locations.values()
+        ]
+    )
+    closest_to_expected = list(expected_locations.keys())[
+        difference_to_expected.argmin()
+    ]
+    return closest_to_expected

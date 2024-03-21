@@ -1,63 +1,84 @@
 import sdRDM
 
-from typing import List, Optional
-from pydantic import Field
+from typing import Dict, List, Optional
+from pydantic import PrivateAttr, model_validator
+from uuid import uuid4
+from pydantic_xml import attr, element
+from lxml.etree import _Element
 from sdRDM.base.listplus import ListPlus
-from sdRDM.base.utils import forge_signature, IDGenerator
-
-
+from sdRDM.base.utils import forge_signature
+from sdRDM.tools.utils import elem2dict
 from .dataset import Dataset
-from .calculation import Calculation
+from .samplepreparation import SamplePreparation
 from .analysis import Analysis
 from .band import Band
-from .measurementtypes import MeasurementTypes
-from .series import Series
-from .measurement import Measurement
-from .value import Value
 from .result import Result
-from .samplepreparation import SamplePreparation
+from .measurementtypes import MeasurementTypes
+from .measurement import Measurement
+from .calculation import Calculation
+from .value import Value
+from .series import Series
 
 
 @forge_signature
-class Experiment(sdRDM.DataModel):
-
+class Experiment(sdRDM.DataModel, search_mode="unordered"):
     """This could be a very basic object that keeps track of the entire experiment."""
 
-    id: Optional[str] = Field(
+    id: Optional[str] = attr(
+        name="id",
         description="Unique identifier of the given object.",
-        default_factory=IDGenerator("experimentINDEX"),
+        default_factory=lambda: str(uuid4()),
         xml="@id",
     )
 
-    name: str = Field(
-        ...,
+    name: str = element(
         description="A descriptive name for the overarching experiment.",
+        tag="name",
+        json_schema_extra=dict(),
     )
 
-    sample_preparation: Optional[SamplePreparation] = Field(
-        default=None,
+    sample_preparation: Optional[SamplePreparation] = element(
         description="Synthesis and preparation parameters",
+        default_factory=SamplePreparation,
+        tag="sample_preparation",
+        json_schema_extra=dict(),
     )
 
-    measurements: List[Measurement] = Field(
+    measurements: List[Measurement] = element(
         description="Each single measurement is contained in one `measurement` object.",
         default_factory=ListPlus,
-        multiple=True,
+        tag="measurements",
+        json_schema_extra=dict(multiple=True),
     )
 
-    analysis: List[Analysis] = Field(
+    analysis: List[Analysis] = element(
         description="Analysis procedure and parameters.",
         default_factory=ListPlus,
-        multiple=True,
+        tag="analysis",
+        json_schema_extra=dict(multiple=True),
     )
 
-    results: Optional[Result] = Field(
-        default=None,
+    results: Optional[Result] = element(
         description=(
             "List of final results calculated from measurements done for the"
             " experiment."
         ),
+        default=None,
+        tag="results",
+        json_schema_extra=dict(),
     )
+    _raw_xml_data: Dict = PrivateAttr(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _parse_raw_xml_data(self):
+        for attr, value in self:
+            if isinstance(value, (ListPlus, list)) and all(
+                (isinstance(i, _Element) for i in value)
+            ):
+                self._raw_xml_data[attr] = [elem2dict(i) for i in value]
+            elif isinstance(value, _Element):
+                self._raw_xml_data[attr] = elem2dict(value)
+        return self
 
     def add_to_measurements(
         self,
@@ -68,7 +89,7 @@ class Experiment(sdRDM.DataModel):
         measurement_type: Optional[MeasurementTypes] = None,
         measurement_data: Optional[Dataset] = None,
         id: Optional[str] = None,
-    ) -> None:
+    ) -> Measurement:
         """
         This method adds an object of type 'Measurement' to attribute measurements
 
@@ -81,7 +102,6 @@ class Experiment(sdRDM.DataModel):
             measurement_type (): Type of measurement.. Defaults to None
             measurement_data (): Series objects of the measured axes.. Defaults to None
         """
-
         params = {
             "name": name,
             "geometry": geometry,
@@ -90,25 +110,22 @@ class Experiment(sdRDM.DataModel):
             "measurement_type": measurement_type,
             "measurement_data": measurement_data,
         }
-
         if id is not None:
             params["id"] = id
-
         self.measurements.append(Measurement(**params))
-
         return self.measurements[-1]
 
     def add_to_analysis(
         self,
-        background_reference: Optional[Measurement] = None,
-        sample_reference: Optional[Measurement] = None,
+        background_reference: Optional[str] = None,
+        sample_reference: Optional[str] = None,
         corrected_data: Optional[Dataset] = None,
         baseline: Optional[Series] = None,
         bands: List[Band] = ListPlus(),
         calculations: List[Calculation] = ListPlus(),
         measurement_results: List[Result] = ListPlus(),
         id: Optional[str] = None,
-    ) -> None:
+    ) -> Analysis:
         """
         This method adds an object of type 'Analysis' to attribute analysis
 
@@ -122,7 +139,6 @@ class Experiment(sdRDM.DataModel):
             calculations (): Calculations performed during the analysis.. Defaults to ListPlus()
             measurement_results (): List of final results calculated from one measurement.. Defaults to ListPlus()
         """
-
         params = {
             "background_reference": background_reference,
             "sample_reference": sample_reference,
@@ -132,10 +148,7 @@ class Experiment(sdRDM.DataModel):
             "calculations": calculations,
             "measurement_results": measurement_results,
         }
-
         if id is not None:
             params["id"] = id
-
         self.analysis.append(Analysis(**params))
-
         return self.analysis[-1]

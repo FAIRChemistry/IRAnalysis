@@ -9,7 +9,6 @@ classDiagram
     Measurement *-- MeasurementTypes
     Measurement *-- Dataset
     Measurement *-- Value
-    Analysis *-- Measurement
     Analysis *-- Band
     Analysis *-- Calculation
     Analysis *-- Result
@@ -18,6 +17,7 @@ classDiagram
     Band *-- Fit
     Band *-- Value
     Fit *-- Value
+    Result *-- Value
     Dataset *-- Series
     
     class IRAnalysis {
@@ -36,7 +36,8 @@ classDiagram
     }
     
     class SamplePreparation {
-        +Value mass*
+        +Value mass
+        +Value sample_area
         +string[0..*] literatureReference
         +string composition
         +string probeMolecule
@@ -53,8 +54,8 @@ classDiagram
     }
     
     class Analysis {
-        +Measurement background_reference
-        +Measurement sample_reference
+        +string background_reference
+        +string sample_reference
         +Dataset corrected_data
         +Series baseline
         +Band[0..*] bands
@@ -68,6 +69,7 @@ classDiagram
         +Value location
         +Value start
         +Value end
+        +Value extinction_coefficient
     }
     
     class Fit {
@@ -80,13 +82,12 @@ classDiagram
     class Calculation {
         +string formula*
         +float[0..*] parameters
-        +UnitClass[0..*] units
+        +Unit[0..*] units
     }
     
     class Result {
         +string name*
-        +float[0..*] values
-        +UnitClass[0..*] units
+        +Value value
     }
     
     class Dataset {
@@ -97,12 +98,14 @@ classDiagram
     
     class Series {
         +float[0..*] data_array
-        +UnitClass unit
+        +Unit unit
     }
     
     class Value {
-        +float value
-        +UnitClass unit
+        +float value*
+        +Unit unit*
+        +float error
+        +float error2
     }
     
     class MeasurementTypes {

@@ -13,7 +13,6 @@ from .value import Value
 from .measurementtypes import MeasurementTypes
 
 __doc__ = ""
-
 __all__ = [
     "IRAnalysis",
     "Experiment",

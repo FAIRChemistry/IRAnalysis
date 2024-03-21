@@ -4,7 +4,7 @@ to assign them a role for later analysis.
 """
 
 from sdRDM import DataModel
-from datamodel.core import *
+from datamodel.core import IRAnalysis, Experiment, Series, Dataset
 import os, glob
 from datetime import datetime
 from typing import List, Optional, Union
@@ -34,9 +34,7 @@ class IRDataFiles:
         self.file_extension = kwargs.get("extension", "csv")
         self._loaded_ir_files = []
         self._datamodel = None
-        self._datamodel_lib = DataModel.from_markdown(
-            f"{self.datamodel_directory}/specifications"
-        )
+        # self._datamodel_lib = DataModel.from_markdown(f"{self.datamodel_directory}/specifications")
         self.datetime_created = str(datetime.now())
         self.experiment_name = kwargs.get("experiment_name", "UnspecifiedExperiment")
         self._background_df = pd.DataFrame({"wavenumber": [], "intensity": []})
@@ -117,18 +115,12 @@ class IRDataFiles:
             datamodel_root (DataModel): With added Measurement objects
         """
 
-        # Loading of DataModel as specified in markdown
-        # os.chdir(self.datamodel_directory)
-        # self._datamodel_lib = DataModel.from_markdown("./specifications")
-
         # Creating an root instance of the DataModel
-        datamodel_root = self._datamodel_lib.IRAnalysis(
+        datamodel_root = IRAnalysis(
             datetime_created=str(self.datetime_created),
         )
         # Creating an Experiment instance of the DataModel
-        datamodel_root_experiment = self._datamodel_lib.Experiment(
-            name=self.experiment_name
-        )
+        datamodel_root_experiment = Experiment(name=self.experiment_name)
         for spectrum in self.files:
             file_location = str(self.directory) + spectrum
             spectrum_df = pd.read_csv(
@@ -140,16 +132,14 @@ class IRDataFiles:
             )
             # Creating individual Series and Dataset instance and fill
             # with spectral data
-            wavenumber_series = self._datamodel_lib.Series(
-                data_array=spectrum_df["wavenumber"].to_numpy(), unit=u.cm ** (-1)
+            wavenumber_series = Series(
+                data_array=spectrum_df["wavenumber"].to_numpy(), unit="1 / cm"
             )
-            intensity_series = self._datamodel_lib.Series(
+            intensity_series = Series(
                 data_array=spectrum_df["intensity"].to_numpy(),
-                unit=u.dimensionless_unscaled,
+                unit="dimensionless",
             )
-            dataset = self._datamodel_lib.Dataset(
-                x_axis=wavenumber_series, y_axis=intensity_series
-            )
+            dataset = Dataset(x_axis=wavenumber_series, y_axis=intensity_series)
             # Adding a Measurement instance to the Experiment
             datamodel_root_experiment.add_to_measurements(
                 name=spectrum, measurement_data=dataset

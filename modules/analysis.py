@@ -3,8 +3,9 @@ This module contains the class to perform the necessary analysis on
 the measurement data that has been parsed by the ir_file_handler module.
 """
 
+from matplotlib.style import available
 from sdRDM import DataModel
-from datamodel.core import *
+from datamodel.core import Value, Fit, Series, SamplePreparation, Experiment
 from modules.ir_file_handler import IRDataFiles
 from modules import utils
 from typing import List, Optional, Union
@@ -17,7 +18,13 @@ from scipy.stats import norm
 from pybaselines.classification import fastchrom
 
 # defining inverse centimeters use across the file
-inv_cm = u.cm ** (-1)
+inv_cm = "1 / cm"
+# default extiontion coefficients from doi.org/10.1006/jcat.1993.1145
+# more accurate coefficients may be obtained from doi.org/10.1016/j.jcat.2020.03.003
+extinction_default = {
+    "Lewis": u.Quantity(2.22e4, u.meter / u.mol),
+    "Bronsted": u.Quantity(1.67e4, u.meter / u.mol),
+}
 
 
 class IRAnalysis(IRDataFiles):
@@ -42,6 +49,9 @@ class IRAnalysis(IRDataFiles):
         self._baseline_bool = kwargs.get("fit_baseline", True)
         self._prepare_analysis_data()
         self._extract_bands()
+        self._extinction_coefficients = self._define_extinction_coefficients(
+            kwargs.get("extinction_coefficients", extinction_default)
+        )
 
     def _set_background_object(self):
         """Sets the variable _background_object to the background object
@@ -68,8 +78,8 @@ class IRAnalysis(IRDataFiles):
         for measurement_object in self._measurements:
             if measurement_object.measurement_type == "Sample":
                 self._datamodel.experiment[0].add_to_analysis(
-                    sample_reference=measurement_object,
-                    background_reference=self._background_object,
+                    sample_reference=measurement_object.id,
+                    background_reference=self._background_object.id,
                     corrected_data=measurement_object.measurement_data,
                 )
         return self._datamodel.experiment[0].analysis
@@ -136,8 +146,9 @@ class IRAnalysis(IRDataFiles):
         # calculate baseline
         baseline, _ = fastchrom(corrected_intensity, xdata=corrected_wavenumber)
         # Create baseline dataset
-        baseline_series = self._datamodel_lib.Series(
-            data_array=baseline, unit=u.dimensionless_unscaled
+        baseline_series = Series(
+            data_array=baseline,
+            unit="dimensionless",
         )
         # update corrected_data in datamodel and add baseline data
         analysis_object.corrected_data.y_axis.data_array = (
@@ -158,25 +169,20 @@ class IRAnalysis(IRDataFiles):
             bands = utils._find_bands(analysis_data_df)
             # Iterating over the rows in the bands dataframe and assingning units to the values
             for band_no in bands.index:
-                peak = self._datamodel_lib.Value(
-                    value=bands.loc[band_no, "peaks"], unit=inv_cm
-                )
-                start = self._datamodel_lib.Value(
-                    value=bands.loc[band_no, "peak_min"], unit=inv_cm
-                )
-                end = self._datamodel_lib.Value(
-                    value=bands.loc[band_no, "peak_max"], unit=inv_cm
-                )
+                peak = Value(value=bands.loc[band_no, "peaks"], unit=inv_cm)
+                start = Value(value=bands.loc[band_no, "peak_min"], unit=inv_cm)
+                end = Value(value=bands.loc[band_no, "peak_max"], unit=inv_cm)
                 band_data = utils._dataframe_truncate(
                     analysis_data_df, (start.value, end.value)
                 )
                 fit = self._fit_band(band_data, band_center=peak.value)
+                assignment = utils._auto_assign_band(peak)
                 analysis_object.add_to_bands(
-                    location=peak, start=start, end=end, fit=fit
+                    assignment=assignment, location=peak, start=start, end=end, fit=fit
                 )
 
     def _fit_band(self, band_data: pd.DataFrame, band_center: float):
-        """Fits a Gauss-Lorentz curve to given band data and returns the 
+        """Fits a Gauss-Lorentz curve to given band data and returns the
         fitted data as a fit object as defined in the data model.
 
         Args:
@@ -189,14 +195,12 @@ class IRAnalysis(IRDataFiles):
         popt = utils._fit_gl_curve(band_data, curve_center=band_center)
         fit_model = "Gauss-Lorentz"
         fit_formula = "..."
-        fit_center = self._datamodel_lib.Value(value=popt[0], unit=inv_cm)
-        fit_std_dev = self._datamodel_lib.Value(value=popt[1], unit=inv_cm)
-        fit_area = self._datamodel_lib.Value(value=popt[2], unit=inv_cm)
-        fit_l_fraction = self._datamodel_lib.Value(
-            value=popt[3], unit=u.dimensionless_unscaled
-        )
+        fit_center = Value(value=popt[0], unit=inv_cm)
+        fit_std_dev = Value(value=popt[1], unit=inv_cm)
+        fit_area = Value(value=popt[2], unit=inv_cm)
+        fit_l_fraction = Value(value=popt[3], unit="dimensionless")
         fit_parameters = [fit_center, fit_std_dev, fit_area, fit_l_fraction]
-        fit_object = self._datamodel_lib.Fit(
+        fit_object = Fit(
             model=fit_model,
             formula=fit_formula,
             parameters=fit_parameters,
@@ -253,9 +257,6 @@ class IRAnalysis(IRDataFiles):
     def plane_plot(self, **kwargs):
         """Draws a 3D plot of all the corrected spectra on a slightly
         angled plane for controlling purposes."""
-
-        # plt.rcParams["figure.figsize"] = kwargs.get("figsize", (17,8))
-        # plt.rcParams["figure.dpi"] = kwargs.get("dpi", 120)
         fig = plt.figure(
             figsize=kwargs.get("figsize", (17, 8)), dpi=kwargs.get("dpi", 120)
         )
@@ -355,3 +356,69 @@ class IRAnalysis(IRDataFiles):
         ax.set_ylabel("intensity / arb. u.")
         plt.legend()
         plt.show()
+
+    def _fill_sample_preparation(self, preparation_dict: dict):
+        """Fills SamplePreparation object in the DataModel with data
+        provided in preparation_dict
+
+        Args:
+            preparation_dict (dict): Dict with keys matching available
+            fields in the data model.
+        """
+        # all available Fields of SamplePreparation except ID
+        available = list(SamplePreparation.model_fields.keys())[1:]
+        sample_object = SamplePreparation()
+        for attribute in preparation_dict:
+            if attribute in available:
+                # Checking whether a Value object is expected for the given attribute
+                if (
+                    sample_object.__annotations__[attribute].__args__[0].__name__
+                    == "Value"
+                ):
+                    quantity = u.Quantity(preparation_dict[attribute])
+                    value_object = Value(value=quantity.value, unit=f"{quantity.unit}")
+                    setattr(sample_object, attribute, value_object)
+                else:
+                    setattr(sample_object, attribute, preparation_dict[attribute])
+            else:
+                print(f"{attribute} is an unknown field.")
+        self._datamodel.experiment[0].sample_preparation = sample_object
+
+    def _define_extinction_coefficients(self, coefficients: dict) -> dict:
+        if not isinstance(coefficients, dict):
+            raise TypeError(
+                "Coefficients must be a dict. Keys are name of Band e.g. Lewis or Bronsted"
+            )
+        for key in coefficients:
+            if not isinstance(coefficients[key], u.Quantity):
+                print("Si units m * mol-1 were assumed for", key)
+                coefficients[key] = u.Quantity(coefficients[key], u.m / u.mol)
+        return coefficients
+
+    def _quantify_from_area(self, peak_area, extinction_coefficient):
+        """Returns the quantity of the desired species calculated form peak area,
+        sample area, the extinction coefficient and the sample mass.
+
+        Args:
+            peak_area (float or u.Quantity): peak area as calculated from the band fit
+            extinction_coefficient (float or u.Quantity): molar extinction coefficient for the species
+
+        Returns:
+           u.Quantity: Species quantity usually in dimension mol / kg
+        """
+        sample_mass = utils._get_quantity_object(
+            self._datamodel.experiment[0].sample_preparation.mass
+        )
+        sample_area = utils._get_quantity_object(
+            self._datamodel.experiment[0].sample_preparation.area
+        )
+        return (sample_area * peak_area) / (sample_mass * extinction_coefficient)
+
+    """def quantify(self, **kwargs):
+        extinction_coefficients = kwargs.get('extinction_coefficients', self._extinction_coefficients)
+        for analysis_object in self._analysis_objects:
+            for band in analysis_object.bands:
+                if band.assignment in extinction_coefficients:
+                    extinction_coefficient = extinction_coefficients[band.assignment]
+                else:
+    """
