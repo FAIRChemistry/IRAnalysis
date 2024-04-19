@@ -10,12 +10,12 @@ from sdRDM.base.utils import forge_signature
 from sdRDM.base.datatypes import Unit
 from sdRDM.tools.utils import elem2dict
 from .dataset import Dataset
-from .band import Band
 from .value import Value
-from .result import Result
-from .calculation import Calculation
 from .fit import Fit
+from .band import Band
+from .result import Result
 from .series import Series
+from .calculation import Calculation
 
 
 @forge_signature
@@ -106,6 +106,7 @@ class Analysis(sdRDM.DataModel, search_mode="unordered"):
         end: Optional[Value] = None,
         extinction_coefficient: Optional[Value] = None,
         id: Optional[str] = None,
+        **kwargs
     ) -> Band:
         """
         This method adds an object of type 'Band' to attribute bands
@@ -138,6 +139,7 @@ class Analysis(sdRDM.DataModel, search_mode="unordered"):
         parameters: List[float] = ListPlus(),
         units: List[Unit] = ListPlus(),
         id: Optional[str] = None,
+        **kwargs
     ) -> Calculation:
         """
         This method adds an object of type 'Calculation' to attribute calculations
@@ -155,7 +157,11 @@ class Analysis(sdRDM.DataModel, search_mode="unordered"):
         return self.calculations[-1]
 
     def add_to_measurement_results(
-        self, name: str, value: Optional[Value] = None, id: Optional[str] = None
+        self,
+        name: str,
+        value: Optional[Value] = None,
+        id: Optional[str] = None,
+        **kwargs
     ) -> Result:
         """
         This method adds an object of type 'Result' to attribute measurement_results

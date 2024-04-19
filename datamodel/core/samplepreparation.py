@@ -36,10 +36,10 @@ class SamplePreparation(sdRDM.DataModel, search_mode="unordered"):
         json_schema_extra=dict(),
     )
 
-    literatureReference: List[str] = element(
+    literature_reference: List[str] = element(
         description="Points to literature references used for the sample preparation",
         default_factory=ListPlus,
-        tag="literatureReference",
+        tag="literature_reference",
         json_schema_extra=dict(multiple=True),
     )
 
@@ -50,17 +50,17 @@ class SamplePreparation(sdRDM.DataModel, search_mode="unordered"):
         json_schema_extra=dict(),
     )
 
-    probeMolecule: Optional[str] = element(
+    probe_molecule: Optional[str] = element(
         description="Probe molecule used",
         default=None,
-        tag="probeMolecule",
+        tag="probe_molecule",
         json_schema_extra=dict(),
     )
 
-    samplePreperation: Optional[str] = element(
+    sample_preperation: Optional[str] = element(
         description="Addidional description of preperation parameters.",
         default=None,
-        tag="samplePreperation",
+        tag="sample_preperation",
         json_schema_extra=dict(),
     )
     _raw_xml_data: Dict = PrivateAttr(default_factory=dict)

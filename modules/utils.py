@@ -103,7 +103,9 @@ def _gauss_lorentz_curve(
     return (l_fraction * lorentz + (1 - l_fraction) * gauss) * area
 
 
-def _fit_gl_curve(data_df: pd.DataFrame, curve_center: float) -> np.ndarray:
+def _fit_gl_curve(
+    data_df: pd.DataFrame, curve_center: float
+) -> tuple[np.ndarray, np.ndarray]:
     """Fits data with a gauss-lorentz curve and returns the found parameters
 
     Args:
@@ -126,10 +128,10 @@ def _fit_gl_curve(data_df: pd.DataFrame, curve_center: float) -> np.ndarray:
         p0=(curve_center, 4.0, 3.0, 0.5),
         bounds=gl_bounds,
     )
-    return popt_gl
+    return popt_gl, pcov_gl
 
 
-def _get_quantity_object(value_object, error=False, **kwargs) -> u.Quantity:
+def _get_quantity_object(value_object: Value, error=False, **kwargs) -> u.Quantity:
     """Creates an Astropy Quantity object from the value and unit of a
     value_object from the data model. Unit can be explicitly specified
 
@@ -141,7 +143,7 @@ def _get_quantity_object(value_object, error=False, **kwargs) -> u.Quantity:
     Returns:
         u.Quantity: Astropy Quantity object for the given value
     """
-    unit = kwargs.get("unit", value_object.unit)
+    unit = kwargs.get("unit", value_object.unit.to_unit_string())
     if error:
         quantity_object = u.Quantity(value_object.error, unit)
     else:

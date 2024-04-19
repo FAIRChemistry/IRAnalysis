@@ -144,7 +144,7 @@ class IRDataFiles:
             datamodel_root_experiment.add_to_measurements(
                 name=spectrum, measurement_data=dataset
             )
-        datamodel_root.experiment.append(datamodel_root_experiment)
+        datamodel_root.experiment = datamodel_root_experiment
         self._datamodel = datamodel_root
         return self._datamodel
 
@@ -167,7 +167,7 @@ class IRDataFiles:
         if self._datamodel == None:
             self._initialize_datamodel()
 
-        measurements = self._datamodel.experiment[0].measurements  # type: ignore
+        measurements = self._datamodel.experiment.measurements  # type: ignore
         for spectrum in measurements:
             if spectrum.name in background_spectra:
                 spectrum.measurement_type = "Background"

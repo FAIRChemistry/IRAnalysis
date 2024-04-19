@@ -23,7 +23,6 @@ Most meta object of your data model with some examples of sensible fields.
 - experiment
   - Type: Experiment
   - Description: List of experiments associated with this dataset.
-  - Multiple: True
 
 ### Experiment
 
@@ -36,13 +35,11 @@ This could be a very basic object that keeps track of the entire experiment.
   - Type: SamplePreparation
   - Description: Synthesis and preparation parameters
 - measurements
-  - Type: Measurement
+  - Type: Measurement[]
   - Description: Each single measurement is contained in one `measurement` object.
-  - Multiple: True
 - analysis
-  - Type: Analysis
+  - Type: Analysis[]
   - Description: Analysis procedure and parameters.
-  - Multiple: True
 - results
   - Type: Result
   - Description: List of final results calculated from measurements done for the experiment.
@@ -58,17 +55,16 @@ This keeps track of important synthesis parameters relevant for later analysis.
 - sample_area
   - Type: Value
   - Description: Area of the IR sample
-- literatureReference
-  - Type: string
+- literature_reference
+  - Type: string[]
   - Description: Points to literature references used for the sample preparation
-  - Multiple: True
 - composition
   - Type: string
   - Description: Relative amount of components used in preparation
-- probeMolecule
+- probe_molecule
   - Type: string
   - Description: Probe molecule used
-- samplePreperation
+- sample_preperation
   - Type: string
   - Description: Addidional description of preperation parameters.
 
@@ -112,17 +108,14 @@ Contains all steps and parameters used to manipulate data and to calculate resul
   - Type: Series
   - Description: Dataset containing the baseline values. Calculation is based on the classification algorithm FastChrom (Johnsen, L., et al., Analyst. 2013, 138, 3502-3511.).
 - bands
-  - Type: Band
+  - Type: Band[]
   - Description: Bands assigned and quantified within the spectrum.
-  - Multiple: True
 - calculations
-  - Type: Calculation
+  - Type: Calculation[]
   - Description: Calculations performed during the analysis.
-  - Multiple: True
 - measurement_results
-  - Type: Result
+  - Type: Result[]
   - Description: List of final results calculated from one measurement.
-  - Multiple: True
 
 
 ### Band
@@ -160,9 +153,8 @@ Contains the fitting function and the found optimal parameters.
   - Type: string
   - Description: Implemented formula of the fitting model. Corresponds with the sequence of fitting parameters.
 - parameters
-  - Type: Value
+  - Type: Value[]
   - Description: Optained optimal fitting parameters. Sequence according to formula.
-  - Multiple: True
 - area
   - Type: Value
   - Description: Total area of the fitted model curve.
@@ -176,13 +168,11 @@ Contains the formula and it's parameters used for a calculation during the analy
   - Type: string
   - Description: Formula for the used calculation.
 - parameters
-  - Type: float
+  - Type: float[]
   - Description: Parameters used for the given formula. Ordered chronologically as described in the formula definition.
-  - Multiple: True
 - units
-  - Type: Unit
+  - Type: Unit[]
   - Description: Units of the values contained in `parameters`. Ordered chronologically as in the parameters list.
-  - Multiple: True
 
 ### Result
 
@@ -218,9 +208,8 @@ Container for a single set of data.
 Abstract Container for a measured Series (i.e. one axis).
 
 - data_array
-  - Type: float
+  - Type: float[]
   - Description: List of data points of one measured Series.
-  - Multiple: True
 - unit
   - Type: Unit
   - Description: Unit of the data points contained in `data_array`.

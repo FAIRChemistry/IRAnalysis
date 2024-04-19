@@ -9,11 +9,7 @@ from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature
 from sdRDM.tools.utils import elem2dict
 from datetime import datetime as Datetime
-from .samplepreparation import SamplePreparation
 from .experiment import Experiment
-from .analysis import Analysis
-from .result import Result
-from .measurement import Measurement
 
 
 @forge_signature
@@ -47,11 +43,11 @@ class IRAnalysis(sdRDM.DataModel, search_mode="unordered"):
         json_schema_extra=dict(multiple=True),
     )
 
-    experiment: List[Experiment] = element(
+    experiment: Optional[Experiment] = element(
         description="List of experiments associated with this dataset.",
-        default_factory=ListPlus,
+        default=None,
         tag="experiment",
-        json_schema_extra=dict(multiple=True),
+        json_schema_extra=dict(),
     )
     _raw_xml_data: Dict = PrivateAttr(default_factory=dict)
 
@@ -65,35 +61,3 @@ class IRAnalysis(sdRDM.DataModel, search_mode="unordered"):
             elif isinstance(value, _Element):
                 self._raw_xml_data[attr] = elem2dict(value)
         return self
-
-    def add_to_experiment(
-        self,
-        name: str,
-        sample_preparation: Optional[SamplePreparation] = None,
-        measurements: List[Measurement] = ListPlus(),
-        analysis: List[Analysis] = ListPlus(),
-        results: Optional[Result] = None,
-        id: Optional[str] = None,
-    ) -> Experiment:
-        """
-        This method adds an object of type 'Experiment' to attribute experiment
-
-        Args:
-            id (str): Unique identifier of the 'Experiment' object. Defaults to 'None'.
-            name (): A descriptive name for the overarching experiment..
-            sample_preparation (): Synthesis and preparation parameters. Defaults to None
-            measurements (): Each single measurement is contained in one `measurement` object.. Defaults to ListPlus()
-            analysis (): Analysis procedure and parameters.. Defaults to ListPlus()
-            results (): List of final results calculated from measurements done for the experiment.. Defaults to None
-        """
-        params = {
-            "name": name,
-            "sample_preparation": sample_preparation,
-            "measurements": measurements,
-            "analysis": analysis,
-            "results": results,
-        }
-        if id is not None:
-            params["id"] = id
-        self.experiment.append(Experiment(**params))
-        return self.experiment[-1]

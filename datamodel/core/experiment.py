@@ -8,16 +8,16 @@ from lxml.etree import _Element
 from sdRDM.base.listplus import ListPlus
 from sdRDM.base.utils import forge_signature
 from sdRDM.tools.utils import elem2dict
+from .measurement import Measurement
 from .dataset import Dataset
-from .samplepreparation import SamplePreparation
-from .analysis import Analysis
+from .value import Value
+from .measurementtypes import MeasurementTypes
 from .band import Band
 from .result import Result
-from .measurementtypes import MeasurementTypes
-from .measurement import Measurement
-from .calculation import Calculation
-from .value import Value
+from .analysis import Analysis
+from .samplepreparation import SamplePreparation
 from .series import Series
+from .calculation import Calculation
 
 
 @forge_signature
@@ -89,6 +89,7 @@ class Experiment(sdRDM.DataModel, search_mode="unordered"):
         measurement_type: Optional[MeasurementTypes] = None,
         measurement_data: Optional[Dataset] = None,
         id: Optional[str] = None,
+        **kwargs
     ) -> Measurement:
         """
         This method adds an object of type 'Measurement' to attribute measurements
@@ -125,6 +126,7 @@ class Experiment(sdRDM.DataModel, search_mode="unordered"):
         calculations: List[Calculation] = ListPlus(),
         measurement_results: List[Result] = ListPlus(),
         id: Optional[str] = None,
+        **kwargs
     ) -> Analysis:
         """
         This method adds an object of type 'Analysis' to attribute analysis

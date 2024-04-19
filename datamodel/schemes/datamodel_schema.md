@@ -24,7 +24,7 @@ classDiagram
         +datetime datetime_created*
         +datetime datetime_modified
         +string[0..*] contributors
-        +Experiment[0..*] experiment
+        +Experiment experiment
     }
     
     class Experiment {
@@ -38,10 +38,10 @@ classDiagram
     class SamplePreparation {
         +Value mass
         +Value sample_area
-        +string[0..*] literatureReference
+        +string[0..*] literature_reference
         +string composition
-        +string probeMolecule
-        +string samplePreperation
+        +string probe_molecule
+        +string sample_preperation
     }
     
     class Measurement {

@@ -75,6 +75,7 @@ class Fit(sdRDM.DataModel, search_mode="unordered"):
         error: Optional[float] = None,
         error2: Optional[float] = None,
         id: Optional[str] = None,
+        **kwargs
     ) -> Value:
         """
         This method adds an object of type 'Value' to attribute parameters
