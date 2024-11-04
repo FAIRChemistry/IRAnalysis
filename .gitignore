@@ -128,5 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# testing notebook
-initialTesting.ipynb
+# sample data
+IR_sample_data/
+
+# VS code config
+.vscode

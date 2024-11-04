@@ -1,16 +1,17 @@
 ```mermaid
 classDiagram
     IRAnalysis *-- Experiment
-    Experiment *-- SamplePreparation
+    Experiment *-- Parameters
     Experiment *-- Measurement
     Experiment *-- Analysis
     Experiment *-- Result
-    SamplePreparation *-- Value
+    Parameters *-- Value
     Measurement *-- MeasurementTypes
+    Measurement *-- Detection
+    Measurement *-- Parameters
     Measurement *-- Dataset
     Measurement *-- Value
     Analysis *-- Band
-    Analysis *-- Calculation
     Analysis *-- Result
     Analysis *-- Dataset
     Analysis *-- Series
@@ -29,37 +30,42 @@ classDiagram
     
     class Experiment {
         +string name*
-        +SamplePreparation sample_preparation
+        +string varied_parameter
+        +Parameters static_parameters
         +Measurement[0..*] measurements
         +Analysis[0..*] analysis
         +Result results
     }
     
-    class SamplePreparation {
+    class Parameters {
         +Value mass
         +Value sample_area
         +string[0..*] literature_reference
         +string composition
         +string probe_molecule
         +string sample_preperation
+        +Value measurement_temperature
+        +Value measurement_pressure
+        +string measurement_geometry
+        +Value desorption_time
+        +Value desorption_temperature
     }
     
     class Measurement {
         +string name*
-        +string geometry
-        +Value temperature
-        +Value pressure
+        +Value varied_parameter_value
         +MeasurementTypes measurement_type
+        +Detection detection*
         +Dataset measurement_data
+        +Parameters static_parameters
     }
     
     class Analysis {
         +string background_reference
-        +string sample_reference
+        +string sample_reference*
         +Dataset corrected_data
         +Series baseline
         +Band[0..*] bands
-        +Calculation[0..*] calculations
         +Result[0..*] measurement_results
     }
     
@@ -73,16 +79,10 @@ classDiagram
     }
     
     class Fit {
-        +string model
+        +string model*
         +string formula
         +Value[0..*] parameters
         +Value area
-    }
-    
-    class Calculation {
-        +string formula*
-        +float[0..*] parameters
-        +Unit[0..*] units
     }
     
     class Result {
@@ -112,6 +112,13 @@ classDiagram
         << Enumeration >>
         +BACKGROUND
         +SAMPLE
+    }
+    
+    class Detection {
+        << Enumeration >>
+        +TRANSMITTANCE
+        +ABSORBANCE
+        +INTENSITY
     }
     
 ```

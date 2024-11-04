@@ -2,13 +2,16 @@
 Module contains utility functions used in the IR analysis module
 """
 
-import pandas as pd
+from types import NoneType
 import numpy as np
+import pandas as pd
+from numpy.typing import ArrayLike
 from scipy.stats import norm, cauchy
 from scipy.signal import find_peaks, peak_widths
-from scipy.optimize import curve_fit, curve_fit
-from numpy.typing import ArrayLike
+from scipy.optimize import curve_fit
 from astropy import units as u
+
+from datamodel.core import fit
 from datamodel.core.value import Value
 
 
@@ -51,20 +54,24 @@ def _single_gauss(
     return norm.pdf(wavenumber, loc=mean, scale=std_dev) * area
 
 
-def _find_bands(spectrum_df: pd.DataFrame) -> pd.DataFrame:
+def _find_bands(spectrum_df: pd.DataFrame, 
+                prominence:float = 0.01,
+                rel_height:float = 0.96) -> pd.DataFrame:
     """Function to find peak centers and the region where the peak starts
     and ends.
 
     Args:
         spectrum (pd.DataFrame): DataFrame with wavenumber and absorbance
             columns
+        prominence (float): Minimum prominence of the peak to be detected
+        rel_height (float): Relative height of the base of the peak to be considered
 
     Returns:
         pd.DataFrame: Peak center, height of the peak base, peak start,
             peak end columns.
     """
-    peaks, _ = find_peaks(spectrum_df["intensity"], prominence=0.01)
-    widths = peak_widths(spectrum_df["intensity"], peaks, rel_height=0.96)
+    peaks, _ = find_peaks(spectrum_df["intensity"], prominence=prominence)
+    widths = peak_widths(spectrum_df["intensity"], peaks, rel_height=rel_height)
     """
     peak_widths interpolates the starting and endpoint of the peak.
     The returned start and end values from peak_widths correspond to the 
@@ -84,7 +91,7 @@ def _find_bands(spectrum_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _gauss_lorentz_curve(
-    x: np.ndarray, loc: float, scale: float, area: float, l_fraction: float
+    x: np.ndarray, area: float, loc: float, scale: float, l_fraction: float
 ) -> np.ndarray:
     """Linear combination of a Gaussian and Lorentzian distribution
 
@@ -98,14 +105,17 @@ def _gauss_lorentz_curve(
     Returns:
         np.ndarray: y values of the curve
     """
-    gauss = norm.pdf(x, loc=loc, scale=scale)
+    beta = 1 / np.sqrt(2 * np.log(2))
+    gauss = norm.pdf(x, loc=loc, scale=beta * scale)
     lorentz = cauchy.pdf(x, loc=loc, scale=scale)
-    return (l_fraction * lorentz + (1 - l_fraction) * gauss) * area
+    return area * (l_fraction * lorentz + (1 - l_fraction) * gauss)
 
 
-def _fit_gl_curve(
-    data_df: pd.DataFrame, curve_center: float
-) -> tuple[np.ndarray, np.ndarray]:
+def _fit_curve(
+    data_df: pd.DataFrame,
+    fit_model,
+    fit_parameter_bounds,
+    fit_parameter_guesses) -> tuple[np.ndarray, np.ndarray]:
     """Fits data with a gauss-lorentz curve and returns the found parameters
 
     Args:
@@ -116,17 +126,12 @@ def _fit_gl_curve(
     Returns:
         np.ndarray: fitting parameters (mean, std.deviation, area, lorentz fraction)
     """
-    # Relative ammount of the lorentzian in the linear combination has to be between 0 and 1
-    gl_bounds = (
-        [-np.inf, -np.inf, -np.inf, 0],
-        [np.inf, np.inf, np.inf, 1],
-    )
     popt_gl, pcov_gl = curve_fit(
-        _gauss_lorentz_curve,
+        fit_model,
         data_df["wavenumber"],
         data_df["intensity"],
-        p0=(curve_center, 4.0, 3.0, 0.5),
-        bounds=gl_bounds,
+        p0=fit_parameter_guesses,
+        bounds=fit_parameter_bounds,
     )
     return popt_gl, pcov_gl
 
@@ -151,28 +156,45 @@ def _get_quantity_object(value_object: Value, error=False, **kwargs) -> u.Quanti
     return quantity_object
 
 
-def _auto_assign_band(peak_location: Value) -> str:
+def _auto_assign_band(peak_location: Value, expected_peaks: pd.DataFrame) -> str:
     """Takes a band object from the data model, determines the smallest
     difference in peak location and returns the corresponding dict key.
 
     Args:
         peak_location (Value): Band object of the data model that has location data.
-
+        expected_peaks (pd.DataFrame): DataFrame with expected peak locations and peak
+            name as index
     Returns:
         str: Peak assignment closest to known values
     """
-    expected_locations = {
-        "Lewis": u.Quantity(1455, "1/cm"),
-        "Bronsted": u.Quantity(1545, "1/cm"),
-        "Mixed": u.Quantity(1491, "1/cm"),
-    }
     difference_to_expected = np.array(
         [
             np.abs(exp_loc.value - peak_location.value)
-            for exp_loc in expected_locations.values()
+            for exp_loc in expected_peaks["location"]
         ]
     )
-    closest_to_expected = list(expected_locations.keys())[
+    closest_to_expected = list(expected_peaks.index)[
         difference_to_expected.argmin()
     ]
     return closest_to_expected
+
+def _value_to_string(value: Value) -> str:
+    """Converts a value object to a string representation
+
+    Args:
+        value (Value): Value object from the data model
+
+    Returns:
+        str: LaTeX string representation of the value with its error
+    """
+    if value.error:
+        # determine number of significant decimals
+        significant_decimals = int(np.ceil(- np.log10(value.error)))
+        #rounding
+        significant_value = round(value.value, significant_decimals)
+        significant_error = round(value.error, significant_decimals)
+        return f"${significant_value} \pm {significant_error}$"
+    else:
+        significant_decimals = 3
+        significant_value = round(value.value, significant_decimals)
+        return f"${significant_value}$"

@@ -1,27 +1,31 @@
-import sdRDM
-
 from typing import Dict, Optional
-from pydantic import PrivateAttr, model_validator
 from uuid import uuid4
-from pydantic_xml import attr, element
+
+import sdRDM
 from lxml.etree import _Element
+from pydantic import PrivateAttr, model_validator
+from pydantic_xml import attr, element
 from sdRDM.base.listplus import ListPlus
-from sdRDM.base.utils import forge_signature
 from sdRDM.tools.utils import elem2dict
+
 from .dataset import Dataset
-from .value import Value
+from .detection import Detection
 from .measurementtypes import MeasurementTypes
+from .parameters import Parameters
+from .value import Value
 
 
-@forge_signature
-class Measurement(sdRDM.DataModel, search_mode="unordered"):
-    """Contains all measurements done for the experiment. E.g. sample, unloaded sample and background."""
+class Measurement(
+    sdRDM.DataModel,
+    search_mode="unordered",
+):
+    """Contains one measurement done for the experiment. E.g. sample, unloaded sample and background."""
 
     id: Optional[str] = attr(
         name="id",
+        alias="@id",
         description="Unique identifier of the given object.",
         default_factory=lambda: str(uuid4()),
-        xml="@id",
     )
 
     name: str = element(
@@ -30,24 +34,10 @@ class Measurement(sdRDM.DataModel, search_mode="unordered"):
         json_schema_extra=dict(),
     )
 
-    geometry: Optional[str] = element(
-        description="Spectrometer geometry used for the measurement",
+    varied_parameter_value: Optional[Value] = element(
+        description="Value of the varied parameter for the given measurement.",
         default=None,
-        tag="geometry",
-        json_schema_extra=dict(),
-    )
-
-    temperature: Optional[Value] = element(
-        description="Temperature at which the measurement was performed.",
-        default=None,
-        tag="temperature",
-        json_schema_extra=dict(),
-    )
-
-    pressure: Optional[Value] = element(
-        description="Pressure at which the measurement was performed.",
-        default=None,
-        tag="pressure",
+        tag="varied_parameter_value",
         json_schema_extra=dict(),
     )
 
@@ -58,21 +48,39 @@ class Measurement(sdRDM.DataModel, search_mode="unordered"):
         json_schema_extra=dict(),
     )
 
+    detection: Detection = element(
+        description="Method/Geometry of detection.",
+        tag="detection",
+        json_schema_extra=dict(),
+    )
+
     measurement_data: Optional[Dataset] = element(
         description="Series objects of the measured axes.",
         default_factory=Dataset,
         tag="measurement_data",
         json_schema_extra=dict(),
     )
+
+    static_parameters: Optional[Parameters] = element(
+        description=(
+            "Parameter object with attributes that do not change during the experiment"
+            " or measurement series."
+        ),
+        default_factory=Parameters,
+        tag="static_parameters",
+        json_schema_extra=dict(),
+    )
+
     _raw_xml_data: Dict = PrivateAttr(default_factory=dict)
 
     @model_validator(mode="after")
     def _parse_raw_xml_data(self):
         for attr, value in self:
             if isinstance(value, (ListPlus, list)) and all(
-                (isinstance(i, _Element) for i in value)
+                isinstance(i, _Element) for i in value
             ):
                 self._raw_xml_data[attr] = [elem2dict(i) for i in value]
             elif isinstance(value, _Element):
                 self._raw_xml_data[attr] = elem2dict(value)
+
         return self

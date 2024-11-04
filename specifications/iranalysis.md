@@ -17,9 +17,8 @@ Most meta object of your data model with some examples of sensible fields.
   - Type: datetime
   - Description: Date and time this dataset has last been modified.
 - contributors
-  - Type: string
+  - Type: string[]
   - Description: List of contributors.
-  - Multiple: True
 - experiment
   - Type: Experiment
   - Description: List of experiments associated with this dataset.
@@ -31,9 +30,12 @@ This could be a very basic object that keeps track of the entire experiment.
 - __name__
   - Type: string
   - Description: A descriptive name for the overarching experiment.
-- sample_preparation
-  - Type: SamplePreparation
-  - Description: Synthesis and preparation parameters
+- varied_parameter
+  - Type: string
+  - Description: Parameter that was varied between measurements.
+- static_parameters
+  - Type: Parameters
+  - Description: Parameter object with attributes that do not change during the experiment or measurement series.
 - measurements
   - Type: Measurement[]
   - Description: Each single measurement is contained in one `measurement` object.
@@ -45,9 +47,10 @@ This could be a very basic object that keeps track of the entire experiment.
   - Description: List of final results calculated from measurements done for the experiment.
 
 
-### SamplePreparation
 
-This keeps track of important synthesis parameters relevant for later analysis.
+### Parameters
+
+This object keeps track of important synthesis and measurement parameters.
 
 - mass
   - Type: Value
@@ -67,29 +70,44 @@ This keeps track of important synthesis parameters relevant for later analysis.
 - sample_preperation
   - Type: string
   - Description: Addidional description of preperation parameters.
+- measurement_temperature
+  - Type: Value
+  - Description: Temperature during the measurement.
+- measurement_pressure
+  - Type: Value
+  - Description: Pressure during the measurement.
+- measurement_geometry
+  - Type: string
+  - Description: Spectrometer geometry used for the measurement.
+- desorption_time
+  - Type: Value
+  - Description: Time given to the sample to desorb probe molecule.
+- desorption_temperature
+  - Type: Value
+  - Description: Temperature at which probe molecule desorption is performed.
 
 ### Measurement
 
-Contains all measurements done for the experiment. E.g. sample, unloaded sample and background.
+Contains one measurement done for the experiment. E.g. sample, unloaded sample and background.
 
 - __name__
   - Type: string
   - Description: Descriptive name for the single measurement.
-- geometry
-  - Type: string
-  - Description: Spectrometer geometry used for the measurement
-- temperature
+- varied_parameter_value
   - Type: Value
-  - Description: Temperature at which the measurement was performed.
-- pressure
-  - Type: Value
-  - Description: Pressure at which the measurement was performed.
+  - Description: Value of the varied parameter for the given measurement.
 - measurement_type
   - Type: MeasurementTypes
   - Description: Type of measurement.
+- __detection__
+  - Type: Detection
+  - Description: Method/Geometry of detection.
 - measurement_data
   - Type: Dataset
   - Description: Series objects of the measured axes.
+- static_parameters
+  - Type: Parameters
+  - Description: Parameter object with attributes that do not change during the experiment or measurement series.
 
 ### Analysis
 
@@ -98,7 +116,7 @@ Contains all steps and parameters used to manipulate data and to calculate resul
 - background_reference
   - Type: string
   - Description: Reference to the IDs of background measurements used.
-- sample_reference
+- __sample_reference__
   - Type: string
   - Description: Reference to the ID of the sample measurement.
 - corrected_data
@@ -110,9 +128,6 @@ Contains all steps and parameters used to manipulate data and to calculate resul
 - bands
   - Type: Band[]
   - Description: Bands assigned and quantified within the spectrum.
-- calculations
-  - Type: Calculation[]
-  - Description: Calculations performed during the analysis.
 - measurement_results
   - Type: Result[]
   - Description: List of final results calculated from one measurement.
@@ -146,7 +161,7 @@ Contains parameters of a band analyzed during the analysis.
 
 Contains the fitting function and the found optimal parameters.
 
-- model
+- __model__
   - Type: string
   - Description: Description of the fitting model used (e.g. Gauss-Lorentz)
 - formula
@@ -158,21 +173,6 @@ Contains the fitting function and the found optimal parameters.
 - area
   - Type: Value
   - Description: Total area of the fitted model curve.
-
-
-### Calculation
-
-Contains the formula and it's parameters used for a calculation during the analysis.
-
-- __formula__
-  - Type: string
-  - Description: Formula for the used calculation.
-- parameters
-  - Type: float[]
-  - Description: Parameters used for the given formula. Ordered chronologically as described in the formula definition.
-- units
-  - Type: Unit[]
-  - Description: Units of the values contained in `parameters`. Ordered chronologically as in the parameters list.
 
 ### Result
 
@@ -241,6 +241,16 @@ Abstract Container for a single value-unit pair.
 Possible types of measurements to be used during analysis
 
 ```python
-BACKGROUND = "Background"
-SAMPLE = "Sample"
+BACKGROUND = "background"
+SAMPLE = "sample"
+```
+
+### Detection
+
+Detection method used in the experiment. "Transmission" expects minima in the spectrum for the bands. "Intensity" or "Absorbance" treats bands as maxima in the spectrum.
+
+```python
+TRANSMITTANCE = "transmittance"
+ABSORBANCE = "absorbance"
+INTENSITY = "intensity"
 ```
