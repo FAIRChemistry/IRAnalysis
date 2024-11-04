@@ -1,4 +1,3 @@
-from datetime import datetime as Datetime
 from typing import Dict, Optional
 from uuid import uuid4
 
@@ -9,14 +8,14 @@ from pydantic_xml import attr, element
 from sdRDM.base.listplus import ListPlus
 from sdRDM.tools.utils import elem2dict
 
-from .series import Series
+from .value import Value
 
 
-class Dataset(
+class Result(
     sdRDM.DataModel,
     search_mode="unordered",
 ):
-    """Container for a single set of data."""
+    """A final result obtained from the analysis."""
 
     id: Optional[str] = attr(
         name="id",
@@ -25,24 +24,16 @@ class Dataset(
         default_factory=lambda: str(uuid4()),
     )
 
-    timestamp: Optional[Datetime] = element(
-        description="Date and time the data was recorded",
+    name: str = element(
+        description="Name of the calculated value",
+        tag="name",
+        json_schema_extra=dict(),
+    )
+
+    value: Optional[Value] = element(
+        description="Value(s) for the specified result.",
         default=None,
-        tag="timestamp",
-        json_schema_extra=dict(),
-    )
-
-    x_axis: Optional[Series] = element(
-        description="The object containing data points and unit of the x-axis.",
-        default_factory=Series,
-        tag="x_axis",
-        json_schema_extra=dict(),
-    )
-
-    y_axis: Optional[Series] = element(
-        description="The object containing data points and unit of the y-axis.",
-        default_factory=Series,
-        tag="y_axis",
+        tag="value",
         json_schema_extra=dict(),
     )
 

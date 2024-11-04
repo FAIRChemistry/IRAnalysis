@@ -10,11 +10,11 @@ from sdRDM.base.listplus import ListPlus
 from sdRDM.tools.utils import elem2dict
 
 
-class Series(
+class Calculation(
     sdRDM.DataModel,
     search_mode="unordered",
 ):
-    """Abstract Container for a measured Series (i.e. one axis)."""
+    """Contains the formula and it's parameters used for a calculation during the analysis."""
 
     id: Optional[str] = attr(
         name="id",
@@ -23,20 +23,34 @@ class Series(
         default_factory=lambda: str(uuid4()),
     )
 
-    data_array: List[float] = element(
-        description="List of data points of one measured Series.",
+    formula: str = element(
+        description="Formula for the used calculation.",
+        tag="formula",
+        json_schema_extra=dict(),
+    )
+
+    parameters: List[float] = element(
+        description=(
+            "Parameters used for the given formula. Ordered chronologically as"
+            " described in the formula definition."
+        ),
         default_factory=ListPlus,
-        tag="data_array",
+        tag="parameters",
         json_schema_extra=dict(
             multiple=True,
         ),
     )
 
-    unit: Optional[Unit] = element(
-        description="Unit of the data points contained in `data_array`.",
-        default=None,
-        tag="unit",
-        json_schema_extra=dict(),
+    units: List[Unit] = element(
+        description=(
+            "Units of the values contained in `parameters`. Ordered chronologically as"
+            " in the parameters list."
+        ),
+        default_factory=ListPlus,
+        tag="units",
+        json_schema_extra=dict(
+            multiple=True,
+        ),
     )
 
     _raw_xml_data: Dict = PrivateAttr(default_factory=dict)
@@ -52,3 +66,18 @@ class Series(
                 self._raw_xml_data[attr] = elem2dict(value)
 
         return self
+
+    def add_to_units(
+        self,
+        unit_string: str,
+    ):
+        """
+        This method adds an object of type 'Unit' to attribute units
+
+        Args:
+            unit_string (str): The string to be parsed into a Unit object
+        """
+
+        self.units.append(Unit.from_string(unit_string))
+
+        return self.units[-1]

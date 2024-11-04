@@ -1,4 +1,3 @@
-from datetime import datetime as Datetime
 from typing import Dict, Optional
 from uuid import uuid4
 
@@ -6,17 +5,16 @@ import sdRDM
 from lxml.etree import _Element
 from pydantic import PrivateAttr, model_validator
 from pydantic_xml import attr, element
+from sdRDM.base.datatypes import Unit
 from sdRDM.base.listplus import ListPlus
 from sdRDM.tools.utils import elem2dict
 
-from .series import Series
 
-
-class Dataset(
+class Value(
     sdRDM.DataModel,
     search_mode="unordered",
 ):
-    """Container for a single set of data."""
+    """Abstract Container for a single value-unit pair."""
 
     id: Optional[str] = attr(
         name="id",
@@ -25,24 +23,32 @@ class Dataset(
         default_factory=lambda: str(uuid4()),
     )
 
-    timestamp: Optional[Datetime] = element(
-        description="Date and time the data was recorded",
+    value: float = element(
+        description="Value of the data point",
+        tag="value",
+        json_schema_extra=dict(),
+    )
+
+    unit: Unit = element(
+        description="Unit of the data point contained in `value`.",
+        tag="unit",
+        json_schema_extra=dict(),
+    )
+
+    error: Optional[float] = element(
+        description="Error of the value.",
         default=None,
-        tag="timestamp",
+        tag="error",
         json_schema_extra=dict(),
     )
 
-    x_axis: Optional[Series] = element(
-        description="The object containing data points and unit of the x-axis.",
-        default_factory=Series,
-        tag="x_axis",
-        json_schema_extra=dict(),
-    )
-
-    y_axis: Optional[Series] = element(
-        description="The object containing data points and unit of the y-axis.",
-        default_factory=Series,
-        tag="y_axis",
+    error2: Optional[float] = element(
+        description=(
+            "If the error is not symetric in both directions, this value specifies the"
+            " error into the other direction."
+        ),
+        default=None,
+        tag="error2",
         json_schema_extra=dict(),
     )
 

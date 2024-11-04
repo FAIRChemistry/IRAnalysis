@@ -2,5 +2,6 @@ from enum import Enum
 
 
 class MeasurementTypes(Enum):
-    BACKGROUND = "Background"
-    SAMPLE = "Sample"
+
+    BACKGROUND = "background"
+    SAMPLE = "sample"

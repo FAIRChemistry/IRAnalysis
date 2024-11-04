@@ -1,4 +1,3 @@
-from datetime import datetime as Datetime
 from typing import Dict, Optional
 from uuid import uuid4
 
@@ -9,14 +8,15 @@ from pydantic_xml import attr, element
 from sdRDM.base.listplus import ListPlus
 from sdRDM.tools.utils import elem2dict
 
-from .series import Series
+from .fit import Fit
+from .value import Value
 
 
-class Dataset(
+class Band(
     sdRDM.DataModel,
     search_mode="unordered",
 ):
-    """Container for a single set of data."""
+    """Contains parameters of a band analyzed during the analysis."""
 
     id: Optional[str] = attr(
         name="id",
@@ -25,24 +25,45 @@ class Dataset(
         default_factory=lambda: str(uuid4()),
     )
 
-    timestamp: Optional[Datetime] = element(
-        description="Date and time the data was recorded",
+    assignment: Optional[str] = element(
+        description="Assignment of the band",
         default=None,
-        tag="timestamp",
+        tag="assignment",
         json_schema_extra=dict(),
     )
 
-    x_axis: Optional[Series] = element(
-        description="The object containing data points and unit of the x-axis.",
-        default_factory=Series,
-        tag="x_axis",
+    fit: Optional[Fit] = element(
+        description="Calculated fit for the band.",
+        default=None,
+        tag="fit",
         json_schema_extra=dict(),
     )
 
-    y_axis: Optional[Series] = element(
-        description="The object containing data points and unit of the y-axis.",
-        default_factory=Series,
-        tag="y_axis",
+    location: Optional[Value] = element(
+        description="Location of the band maximum.",
+        default=None,
+        tag="location",
+        json_schema_extra=dict(),
+    )
+
+    start: Optional[Value] = element(
+        description="First data point attributed to the band.",
+        default=None,
+        tag="start",
+        json_schema_extra=dict(),
+    )
+
+    end: Optional[Value] = element(
+        description="Last data point attributed to the band.",
+        default=None,
+        tag="end",
+        json_schema_extra=dict(),
+    )
+
+    extinction_coefficient: Optional[Value] = element(
+        description="Molar extinction coefficient of the band.",
+        default=None,
+        tag="extinction_coefficient",
         json_schema_extra=dict(),
     )
 

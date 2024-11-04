@@ -1,19 +1,14 @@
-from .iranalysis import IRAnalysis
-from .experiment import Experiment
-from .measurement import Measurement
-from .correctedspectrum import CorrectedSpectrum
+from .analysis import Analysis
+from .band import Band
+from .calculation import Calculation
 from .dataset import Dataset
-from .series import Series
+from .detection import Detection
+from .experiment import Experiment
+from .fit import Fit
+from .iranalysis import IRAnalysis
+from .measurement import Measurement
 from .measurementtypes import MeasurementTypes
-
-__doc__ = ""
-
-__all__ = [
-    "IRAnalysis",
-    "Experiment",
-    "Measurement",
-    "CorrectedSpectrum",
-    "Dataset",
-    "Series",
-    "MeasurementTypes",
-]
+from .parameters import Parameters
+from .result import Result
+from .series import Series
+from .value import Value
